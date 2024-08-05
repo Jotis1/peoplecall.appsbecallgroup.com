@@ -25,6 +25,6 @@ npm run build
 ```
 
 > [!IMPORTANT]  
-> Esto se hace para crear los archivos estáticos de TailwindCSS y los estilos de la app. 6. En algunos casos ampliar el tiempor de ejecución de PHP.
+> Esto se hace para crear los archivos estáticos de TailwindCSS y los estilos de la app. 6. En algunos casos ampliar el tiempor de ejecución de PHP.  
 > [!TIP]  
 > 4 horas equivalen a 14400 7. Desplegar la aplicación
