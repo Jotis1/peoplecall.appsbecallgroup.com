@@ -1,0 +1,6 @@
+projectKey=becall-it-dev_peoplecall_e0a3382f-b98f-43ce-a58e-d08a20008412
+serverUrl=http://localhost:9000
+serverVersion=10.6.0.92116
+dashboardUrl=http://localhost:9000/dashboard?id=becall-it-dev_peoplecall_e0a3382f-b98f-43ce-a58e-d08a20008412
+ceTaskId=0f073c1c-35a8-4e85-84ba-7ab55dae0b10
+ceTaskUrl=http://localhost:9000/api/ce/task?id=0f073c1c-35a8-4e85-84ba-7ab55dae0b10

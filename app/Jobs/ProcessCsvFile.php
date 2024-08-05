@@ -58,7 +58,7 @@ class ProcessCsvFile implements ShouldQueue
             // Obtenemos el contenido del archivo
             $file = $this->getCSVFileContent();
             if (count($file) === 0) {
-                Log::error("No phone numbers found in file");   
+                Log::error("No phone numbers found in file");
                 return;
             }
 
@@ -71,21 +71,19 @@ class ProcessCsvFile implements ShouldQueue
 
             // Enviamos el archivo al usuario
             Mail::to($user->email)->send(new CsvSender($this->path, $this->userId, count($file)));
-
         } catch (Exception $e) {
 
             Log::error($e->getMessage());
-
         } finally {
 
             $user = User::find($this->userId);
             $user->is_running_job = false;
             $user->save();
-
         }
     }
 
-    public function getCSVFileContent() {
+    public function getCSVFileContent()
+    {
         try {
 
             // Obtenemos el contenido del archivo
@@ -96,7 +94,7 @@ class ProcessCsvFile implements ShouldQueue
             // Recorremos las líneas del archivo
             foreach ($fileContent as $line) {
                 // Separamos por punto y coma
-                $lines = str_replace(",",";", $line);
+                $lines = str_replace(",", ";", $line);
                 $firstRowData = explode(";", $lines)[0];
                 // Quitamos los espacios en blanco
                 $firstRowData = preg_replace('/\s+/', '', $line);
@@ -104,22 +102,21 @@ class ProcessCsvFile implements ShouldQueue
                 // Teniendo en cuenta que serán números de teléfono, eliminamos los prefijos
                 $firstRowData = preg_replace("/^(\+34|0034|34)/", "", $firstRowData);
                 // Comprobamos que sea un número de teléfono
-                if (empty($firstRowData) || !is_numeric($firstRowData) || strlen($firstRowData) != 9 || in_array($firstRowData, $firstColumn)){
+                if (empty($firstRowData) || !is_numeric($firstRowData) || strlen($firstRowData) != 9 || in_array($firstRowData, $firstColumn)) {
                     continue;
                 }
                 $firstColumn[] = $firstRowData;
             }
 
             return $firstColumn;
-
         } catch (Exception $e) {
             Log::error($e->getMessage());
             return null;
         }
     }
 
-    public function getDataFromAPI(array $numbers, string $path) {
-
+    public function getDataFromAPI(array $numbers, string $path)
+    {
         $client = new Client([
             "headers" => [
                 "x-api-key" => "69mQ0MjExYzUtMDJlYy0"
@@ -127,37 +124,43 @@ class ProcessCsvFile implements ShouldQueue
         ]);
 
         $endpointURL = $this->phoneURL;
-
-        $response = $client->post($endpointURL, [
-            "json" => $numbers
-        ]);
-
-        $dataArray = json_decode($response->getBody(), true);
-
         $header = "issued;originalOperator;originalOperatorRaw;currentOperator;currentOperatorRaw;number;prefix;type;typeDescription;queriesLeft;lastPortabilityWhen;lastPortabilityFrom;lastPortabilityFromRaw;lastPortabilityTo;lastPortabilityToRaw";
-        
-        Storage::put("public/".$path, $header);
 
-        foreach ($dataArray as $data) {
-            $issued = $data["issued"] ?? "";
-            $originalOperator = $data["originalOperator"] ?? "";
-            $originalOperatorRaw = $data["originalOperatorRaw"] ?? "";
-            $currentOperator = $data["currentOperator"] ?? "";
-            $currentOperatorRaw = $data["currentOperatorRaw"] ?? "";
-            $number = $data["number"] ?? "";
-            $prefix = $data["prefix"] ?? "";
-            $type = $data["type"] ?? "";
-            $typeDescription = $data["typeDescription"] ?? "";
-            $lastPortabilityWhen = $data["lastPortability"]["when"] ?? "";
-            $lastPortabilityFrom = $data["lastPortability"]["from"] ?? "";
-            $lastPortabilityFromRaw = $data["lastPortability"]["fromRaw"] ?? "";
-            $lastPortabilityTo = $data["lastPortability"]["to"] ?? "";
-            $lastPortabilityToRaw = $data["lastPortability"]["toRaw"] ?? "";
+        // Crear archivo con el header
+        Storage::put("public/" . $path, $header);
 
-            $message = "$issued;$originalOperator;$originalOperatorRaw;$currentOperator;$currentOperatorRaw;$number;$prefix;$type;$typeDescription;$lastPortabilityWhen;$lastPortabilityFrom;$lastPortabilityFromRaw;$lastPortabilityTo;$lastPortabilityToRaw";
-            Storage::append("public/".$path, $message);
+        // Dividir el array en bloques de 10,000
+        $chunks = array_chunk($numbers, 10000);
+
+        foreach ($chunks as $chunk) {
+            $response = $client->post($endpointURL, [
+                "json" => $chunk
+            ]);
+
+            $dataArray = json_decode($response->getBody(), true);
+
+            foreach ($dataArray as $data) {
+                $issued = $data["issued"] ?? "";
+                $originalOperator = $data["originalOperator"] ?? "";
+                $originalOperatorRaw = $data["originalOperatorRaw"] ?? "";
+                $currentOperator = $data["currentOperator"] ?? "";
+                $currentOperatorRaw = $data["currentOperatorRaw"] ?? "";
+                $number = $data["number"] ?? "";
+                $prefix = $data["prefix"] ?? "";
+                $type = $data["type"] ?? "";
+                $typeDescription = $data["typeDescription"] ?? "";
+                $lastPortabilityWhen = $data["lastPortability"]["when"] ?? "";
+                $lastPortabilityFrom = $data["lastPortability"]["from"] ?? "";
+                $lastPortabilityFromRaw = $data["lastPortability"]["fromRaw"] ?? "";
+                $lastPortabilityTo = $data["lastPortability"]["to"] ?? "";
+                $lastPortabilityToRaw = $data["lastPortability"]["toRaw"] ?? "";
+
+                $message = "$issued;$originalOperator;$originalOperatorRaw;$currentOperator;$currentOperatorRaw;$number;$prefix;$type;$typeDescription;$lastPortabilityWhen;$lastPortabilityFrom;$lastPortabilityFromRaw;$lastPortabilityTo;$lastPortabilityToRaw";
+                Storage::append("public/" . $path, $message);
+            }
+
+            // Guardar respuesta completa en un archivo separado por bloque
+            Storage::append("public/save/" . $path, $response->getBody(), 'public');
         }
-
     }
-
 }
