@@ -1,0 +1,16 @@
+<div>
+    @php
+        use App\Models\User;
+        $user = User::find($userId);
+    @endphp
+
+    <p>Felicidades {{ $user->name }}, el procesamiento del archivo ha finalizado con éxito.</p>
+    <p>
+        Ha usado {{ $rows }} solicitudes. Tiene
+        {{ $user->monthly_requests === -1 ? 'ilimitadas' : $user->monthly_requests - $user->executed_requests }}
+        restantes.
+    </p>
+    <a href="https://peoplecall.appsbecallgroup.com/download/{{ $path }}" class="text-blue-500">
+        Pulse aquí para descargar el archivo
+    </a>
+</div>
