@@ -7,7 +7,7 @@
             $allUsers = App\Models\User::all();
             @endphp
             @foreach ($allUsers as $user)
-            <section class="flex flex-col bg-ctp-mantle rounded-md">
+            <section wire:key="{{$user->id}}" class="flex flex-col bg-ctp-mantle rounded-md">
                 <article class="flex w-full flex-col items-center justify-between md:flex-row">
                     <aside
                         class="flex h-auto flex-col items-center gap-1.5 px-5 py-2.5 sm:h-12 sm:flex-row sm:gap-5 sm:py-0">
@@ -27,6 +27,7 @@
                             <x-tabler-loader-2 wire:loading class="size-5 animate-spin" />
                         </button>
                         <livewire:edit-users-modal
+                            wire:key="{{ $user->id }}"
                             username="{{ $user->name }}"
                             requests="{{ $user->monthly_requests }}"
                             user_id="{{ $user->id }}" />
