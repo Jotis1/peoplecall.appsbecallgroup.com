@@ -31,6 +31,9 @@ class ManageUsers extends Component
         $user = User::find($id);
         if ($user) {
             $path = storage_path('app/public/' . $user->name . '/csv');
+            if (!is_dir($path)) {
+                return;
+            }
             // Sacamos los directorios de dentro del path
             $directories = array_diff(scandir($path), ['.', '..']);
             foreach ($directories as $directory) {

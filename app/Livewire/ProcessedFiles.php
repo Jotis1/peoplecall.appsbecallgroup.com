@@ -15,6 +15,10 @@ class ProcessedFiles extends Component
         $user = Auth::user();
         if ($user) {
             $path = storage_path('app/public/' . $user->name . '/csv');
+            // Comprobamos si el directorio existe
+            if (!is_dir($path)) {
+                return;
+            }
             // Sacamos los directorios de dentro del path
             $directories = array_diff(scandir($path), ['.', '..']);
             foreach ($directories as $directory) {
