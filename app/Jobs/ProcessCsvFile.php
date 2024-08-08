@@ -47,7 +47,6 @@ class ProcessCsvFile implements ShouldQueue
     public function handle(): void
     {
         try {
-
             // Obtenemos el usuario
             $user = User::find($this->userId);
             if (!$user) {
@@ -61,18 +60,14 @@ class ProcessCsvFile implements ShouldQueue
                 Log::error("No phone numbers found in file");
                 return;
             }
-
             $this->getDataFromAPI($file, $this->path);
 
             //Borramos el archivo anterior
             Storage::delete($this->path);
 
-            //Creamos la ruta publica
-
             // Enviamos el archivo al usuario
             Mail::to($user->email)->send(new CsvSender($this->path, $this->userId, count($file)));
         } catch (Exception $e) {
-
             Log::error($e->getMessage());
         } finally {
 

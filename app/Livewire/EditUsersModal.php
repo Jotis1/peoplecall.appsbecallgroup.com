@@ -3,16 +3,16 @@
 namespace App\Livewire;
 
 use Livewire\Component;
-use Livewire\Attribtes\Validate;
 use App\Models\User;
+use Livewire\Attributes\Validate as AttributesValidate;
 
 class EditUsersModal extends Component
 {
 
     public $username = "Usuario";
-    #[Validate("numeric")]
+    #[AttributesValidate("numeric")]
     public $requests;
-    #[Validate("numeric")]
+    #[AttributesValidate("numeric")]
     public $user_id;
     public $showModal = false;
 
@@ -39,7 +39,8 @@ class EditUsersModal extends Component
         ];
     }
 
-    public function save(){
+    public function save()
+    {
         $validated = $this->validate();
         $id = $validated['user_id'];
         $requests = $validated['requests'];

@@ -2,33 +2,17 @@
 
 namespace App\Livewire;
 
-use App\Models\User;
+use Illuminate\Support\Facades\Auth;
 use Livewire\Component;
-use Livewire\Attributes\Title;
 
-class ManageUsers extends Component
+class ProcessedFiles extends Component
 {
-
-    public $currentUserId = null;
-
-    public function delete($id)
-    {
-        $user = User::find($id);
-        $user->delete();
-        $this->redirectRoute('manage-users');
-    }
 
     public $files = [];
 
-    public function getFiles($id)
+    public function mount()
     {
-        if ($this->currentUserId === $id) {
-            $this->currentUserId = null;
-            $this->files = [];
-            return;
-        }
-        $this->currentUserId = $id;
-        $user = User::find($id);
+        $user = Auth::user();
         if ($user) {
             $path = storage_path('app/public/' . $user->name . '/csv');
             // Sacamos los directorios de dentro del path
@@ -44,9 +28,8 @@ class ManageUsers extends Component
         }
     }
 
-    #[Title('Administrar usuarios')]
     public function render()
     {
-        return view('livewire.views.manage-users');
+        return view('livewire.processed-files');
     }
 }
