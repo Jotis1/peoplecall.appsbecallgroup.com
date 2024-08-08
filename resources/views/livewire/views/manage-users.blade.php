@@ -40,7 +40,7 @@
                 </article>
                 @if ($currentUserId === $user->id)
                 <section class="flex flex-row flex-wrap gap-x-5 gap-y-2.5 w-full items-start px-5 py-2.5">
-                    @if ($files->isEmpty())
+                    @if (empty($files))
                     <p class="text-xs">No hay archivos disponibles</p>
                     @else
                     @foreach ($files as $file)
