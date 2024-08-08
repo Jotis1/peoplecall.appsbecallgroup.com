@@ -40,7 +40,6 @@ class FetchFileController extends Controller
                 session()->flash('error', 'Ya tienes un proceso en ejecución, espera a que termine.');
                 return redirect()->route('dashboard');
             }
-            session()->flash('success', 'El archivo se está procesando, espera un momento....');
             // Obtenemos las variables necesarias para el trabajo en segundo plano
             $rateLimit = env('PHONE_API_RATE_LIMIT', 300);
             $phoneURL = env('PHONE_API_URL', 'https://numclass-api.nubefone.com/v2/numbers/');
