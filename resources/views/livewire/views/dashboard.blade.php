@@ -34,7 +34,7 @@
             @if ($isRunningJob)
             <section wire:poll='refreshIsRunningJob' class="w-72 rounded-md bg-ctp-mantle p-5">
                 <p class="text-xs font-medium">
-                    Tu archivo se está procesando en segundo plano. Te enviaremos un correo cuando esté listo.
+                    Tu archivo se está procesando en segundo plano, espera un momento...
                 </p>
             </section>
             @else

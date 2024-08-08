@@ -11,7 +11,8 @@ use App\Models\Queues;
 
 class FetchFileController extends Controller
 {
-    public function save(Request $request){
+    public function save(Request $request)
+    {
         try {
             Log::info("Procesando archivo CSV");
             // Validación de los campos
@@ -32,14 +33,14 @@ class FetchFileController extends Controller
             $count = count($rows);
             $monthlyRequests = $user->monthly_requests;
             $excutedRequests = $user->executed_requests;
-            if($monthlyRequests !== -1 && $count > $monthlyRequests){
+            if ($monthlyRequests !== -1 && $count > $monthlyRequests) {
                 session()->flash('error', 'No tienes suficientes solicitudes restantes para procesar este archivo.');
                 return redirect()->route('dashboard');
-            } else if ($user->is_running_job){
+            } else if ($user->is_running_job) {
                 session()->flash('error', 'Ya tienes un proceso en ejecución, espera a que termine.');
                 return redirect()->route('dashboard');
             }
-            session()->flash('success', 'El archivo se está procesando, cuando termine se enviará un correo con el resultado.');
+            session()->flash('success', 'El archivo se está procesando, espera un momento....');
             // Obtenemos las variables necesarias para el trabajo en segundo plano
             $rateLimit = env('PHONE_API_RATE_LIMIT', 300);
             $phoneURL = env('PHONE_API_URL', 'https://numclass-api.nubefone.com/v2/numbers/');
@@ -75,7 +76,8 @@ class FetchFileController extends Controller
         }
     }
 
-    public function download($username, $folder, $file){
+    public function download($username, $folder, $file)
+    {
         try {
             $path = "$username/csv/$folder/$file";
             $path = "/public/$path";
@@ -85,5 +87,4 @@ class FetchFileController extends Controller
             Log::error($th);
         }
     }
-
 }
