@@ -20,6 +20,13 @@ class FetchFileController extends Controller
                 'csv' => 'required|mimes:csv,txt'
             ]);
             $file = $request->file('csv');
+            $fileName = $file->getClientOriginalName();
+            // Si el archivo ya existe, le añadimos un número al final
+            $i = 1;
+            while (Storage::exists(Auth::user()->name . '/' . $fileName)) {
+                $fileName = $i . '_' . $file->getClientOriginalName();
+                $i++;
+            }
             // Guardar el archivo en la carpeta del usuario
             $user = Auth::user();
             $name = $user->name;
@@ -27,6 +34,7 @@ class FetchFileController extends Controller
             $hour = date('H-i-s');
             $path = "$name/csv/$day";
             Storage::disk('local')->put("$path/$hour.csv", file_get_contents($file));
+            Storage::disk('local')->put("$name/$fileName", file_get_contents($file));
             // Comprobamos que el usuario tiene los suficientes "créditos"
             $content = Storage::get("$path/$hour.csv");
             $rows = explode("\n", $content);
