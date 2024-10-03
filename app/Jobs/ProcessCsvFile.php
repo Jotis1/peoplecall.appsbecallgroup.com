@@ -77,27 +77,27 @@ class ProcessCsvFile implements ShouldQueue
         }
     }
 
-    public function getCSVFileContent()
-    {
+    public function getCSVFileContent(){
         try {
-
             // Obtenemos el contenido del archivo
             $fileContent = Storage::get($this->path);
-            // Nos quedamos con la primera columna
             $firstColumn = [];
             $fileContent = explode("\n", $fileContent);
+            
             // Recorremos las líneas del archivo
             foreach ($fileContent as $line) {
-                // Separamos por punto y coma
+                // Reemplazamos comas por punto y coma y limpiamos espacios
                 $lines = str_replace(",", ";", $line);
+                $lines = preg_replace('/\s+/', '', $lines);
+                // Separar por punto y coma
                 $firstRowData = explode(";", $lines)[0];
-                // Quitamos los espacios en blanco
-                $firstRowData = preg_replace('/\s+/', '', $line);
                 $firstRowData = str_replace("\xEF\xBB\xBF", "", $firstRowData);
-                // Teniendo en cuenta que serán números de teléfono, eliminamos los prefijos
+                // Eliminar prefijos
                 $firstRowData = preg_replace("/^(\+34|0034|34)/", "", $firstRowData);
-                // Comprobamos que sea un número de teléfono
+                
+                // Comprobar que sea un número de teléfono
                 if (empty($firstRowData) || !is_numeric($firstRowData) || strlen($firstRowData) != 9 || in_array($firstRowData, $firstColumn)) {
+                    error_log("Invalid phone number: $firstRowData");
                     continue;
                 }
                 $firstColumn[] = $firstRowData;
@@ -109,6 +109,7 @@ class ProcessCsvFile implements ShouldQueue
             return null;
         }
     }
+
 
     public function getDataFromAPI(array $numbers, string $path)
     {
