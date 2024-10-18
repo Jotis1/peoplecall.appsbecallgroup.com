@@ -34,7 +34,6 @@ class FetchFileController extends Controller
             $hour = date('H-i-s');
             $path = "$name/csv/$day";
             Storage::disk('local')->put("$path/$hour.csv", file_get_contents($file));
-            Storage::disk('local')->put("$name/$fileName", file_get_contents($file));
             // Comprobamos que el usuario tiene los suficientes "créditos"
             $content = Storage::get("$path/$hour.csv");
             $rows = explode("\n", $content);

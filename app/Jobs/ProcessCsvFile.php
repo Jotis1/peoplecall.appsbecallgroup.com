@@ -66,7 +66,8 @@ class ProcessCsvFile implements ShouldQueue
             Storage::delete($this->path);
 
             // Enviamos el archivo al usuario
-            // Mail::to($user->email)->send(new CsvSender($this->path, $this->userId, count($file)));
+            error_log("Sending email to $user->email");
+            Mail::to($user->email)->send(new CsvSender($this->path, $this->userId, count($file)));
         } catch (Exception $e) {
             Log::error($e->getMessage());
         } finally {
