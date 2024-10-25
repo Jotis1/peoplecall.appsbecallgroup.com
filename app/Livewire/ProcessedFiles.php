@@ -7,7 +7,6 @@ use Livewire\Component;
 
 class ProcessedFiles extends Component
 {
-
     public $files = [];
 
     public function mount()
@@ -19,16 +18,39 @@ class ProcessedFiles extends Component
             if (!is_dir($path)) {
                 return;
             }
+
             // Sacamos los directorios de dentro del path
             $directories = array_diff(scandir($path), ['.', '..']);
+            $filesWithTimestamps = [];
+
             foreach ($directories as $directory) {
+                // Partimos el nombre del directorio (dd-mm-yyyy)
+                [$day, $month, $year] = explode('-', $directory);
+
+                // Sacamos los archivos de dentro de cada directorio
                 $files = array_diff(scandir($path . '/' . $directory), ['.', '..']);
                 foreach ($files as $file) {
-                    $this->files[] = $directory . '/' . $file;
+                    // Partimos el nombre del archivo (hh-mm-ss)
+                    [$hour, $minute, $second] = explode('-', pathinfo($file, PATHINFO_FILENAME));
+
+                    // Convertimos la fecha y la hora en un timestamp para ordenar
+                    $timestamp = mktime($hour, $minute, $second, $month, $day, $year);
+
+                    // Guardamos el archivo junto con su timestamp
+                    $filesWithTimestamps[] = [
+                        'path' => $directory . '/' . $file,
+                        'timestamp' => $timestamp,
+                    ];
                 }
             }
-            // Le damos la vuelta al array para que los últimos archivos sean los primeros
-            $this->files = array_reverse($this->files);
+
+            // Ordenamos los archivos por timestamp de más reciente a más antiguo
+            usort($filesWithTimestamps, function ($a, $b) {
+                return $b['timestamp'] - $a['timestamp']; // Orden descendente
+            });
+
+            // Extraemos solo los paths ordenados
+            $this->files = array_column($filesWithTimestamps, 'path');
         }
     }
 
