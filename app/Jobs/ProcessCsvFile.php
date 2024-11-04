@@ -55,7 +55,7 @@ class ProcessCsvFile implements ShouldQueue
             Storage::move($tmpPath, $publicPath);
 
             // Enviar el archivo al usuario
-            error_log("Sending email to $user->email");
+            Log::info("Sending email to $user->email");
             Mail::to($user->email)->send(new CsvSender($this->path, $this->userId, count($file)));
 
             // Borrar archivo de tmp (si aún existe)
@@ -84,7 +84,7 @@ class ProcessCsvFile implements ShouldQueue
                 $firstRowData = preg_replace("/^(\+34|0034|34)/", "", $firstRowData);
 
                 if (empty($firstRowData) || !is_numeric($firstRowData) || strlen($firstRowData) != 9 || in_array($firstRowData, $firstColumn)) {
-                    error_log("Invalid phone number: $firstRowData");
+                    Log::info("Invalid phone number: $firstRowData");
                     continue;
                 }
                 $firstColumn[] = $firstRowData;

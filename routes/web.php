@@ -6,8 +6,6 @@ use App\Livewire\Dashboard;
 use App\Livewire\Login;
 use App\Livewire\ManageUsers;
 use App\Livewire\ManageIps;
-use App\Jobs\ProcessCsvFile;
-use Illuminate\Http\Request;
 use App\Http\Controllers\FetchFileController;
 
 /** Login */
@@ -20,5 +18,8 @@ Route::group(['middleware' => ['auth']], function () {
     Route::get('/manage-users', ManageUsers::class)->name('manage-users')->middleware('block-users');
     Route::get('/manage-ips', ManageIps::class)->name('manage-ips')->middleware('block-users');
     Route::get('/download/{username}/csv/{folder}/{file}', [FetchFileController::class, 'download'])->name('download');
+    Route::get('/phpinfo', function () {
+        phpinfo();
+    });
 });
 
