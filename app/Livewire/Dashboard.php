@@ -20,4 +20,12 @@ class Dashboard extends Component
     {
         $this->isRunningJob = Auth::user()->is_running_job;
     }
+
+    public $progress = 0;
+
+    public function refreshProgress()
+    {
+        error_log(Auth::user()->progress);
+        $this->progress = Auth::user()->progress;
+    }
 }

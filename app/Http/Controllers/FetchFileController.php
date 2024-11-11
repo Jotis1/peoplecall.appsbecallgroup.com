@@ -71,6 +71,7 @@ class FetchFileController extends Controller
             $queue->save();
             // Redirigir a la página principal y ejecutar el trabajo en segundo plano
             dispatch($job)->onQueue($chosenQueue);
+            session()->flash('success', 'Archivo CSV procesando en segundo plano. Te enviaremos un correo cuando esté listo.');
             return redirect()->route('dashboard');
         } catch (\Throwable $th) {
             $user = Auth::user();

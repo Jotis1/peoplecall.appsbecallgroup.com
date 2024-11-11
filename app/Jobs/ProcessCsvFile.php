@@ -39,6 +39,9 @@ class ProcessCsvFile implements ShouldQueue
                 Log::error("User with id $this->userId not found");
                 return;
             }
+            
+            $user->progress = 0;
+            $user->save();
 
             $file = $this->getCSVFileContent();
             if (count($file) === 0) {
@@ -50,6 +53,8 @@ class ProcessCsvFile implements ShouldQueue
             $tmpPath = "tmp/" . $this->path;
             $this->getDataFromAPI($file, $tmpPath);
 
+            Log::info("Moving file from tmp to public");
+            error_log("Moving file from tmp to public");
             // Mover el archivo de tmp a public
             $publicPath = "public/" . $this->path;
             Storage::move($tmpPath, $publicPath);
@@ -99,6 +104,7 @@ class ProcessCsvFile implements ShouldQueue
 
     public function getDataFromAPI(array $numbers, string $tmpPath)
     {
+        $user = User::find($this->userId);
         $client = new Client([
             "headers" => [
                 "x-api-key" => "69mQ0MjExYzUtMDJlYy0"
@@ -109,7 +115,11 @@ class ProcessCsvFile implements ShouldQueue
         Storage::put($tmpPath, $header); // Guardamos el header en tmp
 
         $chunks = array_chunk($numbers, 10000);
+        $totalChunks = count($chunks);
+        $currentChunk = 1;
         foreach ($chunks as $chunk) {
+            Log::info("Processing chunk $currentChunk of $totalChunks");
+            error_log("Processing chunk $currentChunk of $totalChunks");
             $response = $client->post($this->phoneURL, ["json" => $chunk]);
             $dataArray = json_decode($response->getBody(), true);
 
@@ -136,6 +146,10 @@ class ProcessCsvFile implements ShouldQueue
 
             // Guardar respuesta completa en un archivo separado por bloque
             Storage::append("public/save/" . basename($tmpPath), $response->getBody());
+            
+            $user->progress = ($currentChunk / $totalChunks) * 100;
+            $user->save();
+            $currentChunk++;
         }
     }
 }

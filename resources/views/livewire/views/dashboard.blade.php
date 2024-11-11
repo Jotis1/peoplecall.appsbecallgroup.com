@@ -26,17 +26,21 @@
                 </article>
             </aside>
         </section>
-        <section class="mt-5 flex flex-col items-center gap-5 sm:items-start">
+        <section wire:poll.5s='refreshIsRunningJob' class="mt-5 flex flex-col items-center gap-5 sm:items-start">
             <h1 class="text-lg sm:text-xl">Subida de archivos</h1>
             @if (@session('success'))
             <p class="text-sm text-ctp-green">{{ session('success') }}</p>
             @endif
             @if ($isRunningJob)
-            <section wire:poll='refreshIsRunningJob' class="w-72 rounded-md bg-ctp-mantle p-5">
-                <p class="text-xs font-medium">
-                    Tu archivo se está procesando en segundo plano, espera un momento...
-                </p>
-            </section>
+                <section class="w-72 rounded-md bg-ctp-mantle p-5">
+                    <p class="text-xs font-medium">
+                        Tu archivo se está procesando en segundo plano, espera un momento...
+                    </p>
+                </section>
+                <section class="w-72 flex flex-col gap-2.5">
+                    Progreso de la subida de archivos
+                    <progress wire:poll.5s='refreshProgress' value="{{ $progress }}" max="100" class="w-full h-5 bg-ctp-mantle rounded-md"></progress>
+                </section>
             @else
             <form action="post-csv" method="POST" class="flex flex-col gap-5" enctype="multipart/form-data">
                 @csrf
