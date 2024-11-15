@@ -67,15 +67,15 @@ class Login extends Component
                 'verify' => false,
                 'timeout' => 10
             ]);
-            Decodificamos la respuesta
+            // Decodificamos la respuesta
             $responseStatus = $response->getStatusCode();
             $reponseOk = $response->getReasonPhrase();  
             $responseBody = json_decode($response->getBody());
-            Si la respuesta es fallida
+            // Si la respuesta es fallida
             if($responseStatus != 200 || $reponseOk != 'OK' || $responseBody->grupo != 'True'){
                 return session()->flash('error', 'Usuario o contraseña incorrectos');
             }
-            Si es exitosa sacamos la información del usuario
+            // Si es exitosa sacamos la información del usuario
             $body = [
                 'token' => $API_TOKEN,
                 'user' => $valid_username,
