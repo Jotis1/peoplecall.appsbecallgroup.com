@@ -26,22 +26,15 @@
                 </article>
             </aside>
         </section>
-        <section wire:poll.5s='refreshIsRunningJob' class="mt-5 flex flex-col items-center gap-5 sm:items-start">
+        <section class="mt-5 flex flex-col items-center gap-5 sm:items-start">
             <h1 class="text-lg sm:text-xl">Subida de archivos</h1>
             @if (@session('success'))
-            <p class="text-sm text-ctp-green">{{ session('success') }}</p>
+            <section class="w-72 rounded-md bg-ctp-mantle p-5">
+                <p class="text-xs font-medium">
+                    {{ session('success') }}
+                </p>
+            </section>
             @endif
-            @if ($isRunningJob)
-                <section class="w-72 rounded-md bg-ctp-mantle p-5">
-                    <p class="text-xs font-medium">
-                        Tu archivo se está procesando en segundo plano, espera un momento...
-                    </p>
-                </section>
-                <section class="w-72 flex flex-col gap-2.5">
-                    Progreso de la subida de archivos
-                    <progress wire:poll.5s='refreshProgress' value="{{ $progress }}" max="100" class="w-full h-5 bg-ctp-mantle rounded-md"></progress>
-                </section>
-            @else
             <form action="post-csv" method="POST" class="flex flex-col gap-5" enctype="multipart/form-data">
                 @csrf
                 @if (@session('error'))
@@ -65,7 +58,6 @@
                     <x-tabler-loader-2 id="submit-loader" class="hidden size-5 animate-spin" />
                 </button>
             </form>
-            @endif
         </section>
         <section class="my-5 flex flex-col items-center gap-5 sm:items-start">
             <h1 class="text-lg sm:text-xl">Mis archivos</h1>

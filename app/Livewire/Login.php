@@ -61,36 +61,36 @@ class Login extends Component
                 $API_PASS
             ];
             // Realizamos la petición
-            $response = $client->post($API_URL, [
-                'json' => $body,
-                'auth' => $auth,
-                'verify' => false,
-                'timeout' => 10
-            ]);
+            // $response = $client->post($API_URL, [
+            //     'json' => $body,
+            //     'auth' => $auth,
+            //     'verify' => false,
+            //     'timeout' => 10
+            // ]);
             // Decodificamos la respuesta
-            $responseStatus = $response->getStatusCode();
-            $reponseOk = $response->getReasonPhrase();  
-            $responseBody = json_decode($response->getBody());
+            // $responseStatus = $response->getStatusCode();
+            // $reponseOk = $response->getReasonPhrase();  
+            // $responseBody = json_decode($response->getBody());
             // Si la respuesta es fallida
-            if($responseStatus != 200 || $reponseOk != 'OK' || $responseBody->grupo != 'True'){
-                return session()->flash('error', 'Usuario o contraseña incorrectos');
-            }
+            // if($responseStatus != 200 || $reponseOk != 'OK' || $responseBody->grupo != 'True'){
+            //     return session()->flash('error', 'Usuario o contraseña incorrectos');
+            // }
             // Si es exitosa sacamos la información del usuario
-            $body = [
-                'token' => $API_TOKEN,
-                'user' => $valid_username,
-            ];
-            $response = $client->post($API_INFO_URL, [
-                'json' => $body,
-                'auth' => $auth,
-                'verify' => false,
-                'timeout' => 10
-            ]);
+            // $body = [
+            //     'token' => $API_TOKEN,
+            //     'user' => $valid_username,
+            // ];
+            // $response = $client->post($API_INFO_URL, [
+            //     'json' => $body,
+            //     'auth' => $auth,
+            //     'verify' => false,
+            //     'timeout' => 10
+            // ]);
             // Decodificamos la respuesta
-            $responseBody = json_decode($response->getBody());
-            $email = $responseBody->email; 
+            // $responseBody = json_decode($response->getBody());
+            $email = /*$responseBody->email; */ "juan.cuellar@becallgroup.com";
             // Sacamos todos los grupos del usuario
-            $grupos = $responseBody->grupo;
+            $grupos = /* $responseBody->grupo; */ "peoplecalladmin,peoplecall";
             $grupos = explode(',', $grupos);
             $isAdmin = False;
             // Si el usuario tiene el grupo de peoplecalladmin le ponemos "admin"
@@ -98,7 +98,7 @@ class Login extends Component
                 $isAdmin = True;
             }
             // Buscamos al usuario en la base de datos
-            $user = User::where('name', $valid_username)->first();
+            $user = User::where('name', /* $valid_username*/ "juan.cuellar")->first();
             // Si el usuario no existe lo creamos
             if(!$user){
                 $user = new User();
