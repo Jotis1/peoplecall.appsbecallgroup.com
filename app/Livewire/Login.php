@@ -60,7 +60,7 @@ class Login extends Component
                 $API_USER,
                 $API_PASS
             ];
-            Realizamos la petición
+            // Realizamos la petición
             $response = $client->post($API_URL, [
                 'json' => $body,
                 'auth' => $auth,
