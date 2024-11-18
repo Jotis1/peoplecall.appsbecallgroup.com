@@ -22,8 +22,7 @@ class User extends Authenticatable
         'password',
         'monthly_requests',
         'executed_requests',
-        'is_admin',
-        'is_running_job',
+        'is_admin'
     ];
 
     /**
@@ -46,5 +45,14 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
         ];
+    }
+
+    /**
+     * Relación con el modelo `File`.
+     * Un usuario puede tener muchos archivos.
+     */
+    public function files()
+    {
+        return $this->hasMany(File::class);
     }
 }

@@ -88,7 +88,7 @@ class Login extends Component
             ]);
             // Decodificamos la respuesta
             $responseBody = json_decode($response->getBody());
-            $email = $responseBody->email; 
+            $email = $responseBody->email;
             // Sacamos todos los grupos del usuario
             $grupos = $responseBody->grupo;
             $grupos = explode(',', $grupos);

@@ -1,7 +1,7 @@
 <div>
     @if (auth()->user()->is_admin)
         <section class="mt-5 flex flex-col items-center gap-5 text-center sm:items-start sm:text-start">
-            <button wire:click="toggleOptions" class="flex h-9 w-fit items-center gap-2.5 rounded-md bg-ctp-crust px-5">
+            <button wire:click="toggleOptions" class="flex h-9 w-fit items-center gap-2.5 rounded-md bg-ctp-mantle px-5">
                 Opciones de administrador
                 <x-heroicon-o-cog-8-tooth wire:loading.remove class="size-5" />
                 <x-tabler-loader-2 wire:loading class="size-5 animate-spin" />

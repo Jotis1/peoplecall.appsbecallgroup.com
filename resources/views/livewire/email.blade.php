@@ -10,7 +10,7 @@
         {{ $user->monthly_requests === -1 ? 'ilimitadas' : $user->monthly_requests - $user->executed_requests }}
         restantes.
     </p>
-    <a href="https://peoplecall.appsbecallgroup.com/download/{{ $path }}" class="text-blue-500">
+    <a href="https://peoplecall.appsbecallgroup.com/{{ $path }}" class="text-blue-500">
         Pulse aquí para descargar el archivo
     </a>
 </div>

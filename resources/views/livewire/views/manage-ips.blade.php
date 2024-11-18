@@ -8,7 +8,7 @@
             @endphp
 
             @foreach ($allIps as $ip)
-                <article class="flex w-full items-center justify-between rounded-md bg-ctp-mantle">
+                <article class="flex w-full items-center justify-between rounded-md bg-ctp-base dark:bg-ctp-mantle">
                     <aside class="flex h-12 items-center gap-5 px-5">
                         <p>{{ $ip->ip }}</p>
                     </aside>

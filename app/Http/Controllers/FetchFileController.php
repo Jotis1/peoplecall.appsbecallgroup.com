@@ -2,93 +2,121 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Queues;
+use App\Jobs\ProcessCsvFile;
+use App\Models\File;
+use App\Models\Number;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
-use App\Jobs\ProcessCsvFile;
 use Illuminate\Support\Facades\Log;
-use App\Models\Queues;
 
 class FetchFileController extends Controller
 {
     public function save(Request $request)
     {
         try {
-            Log::info("Procesando archivo CSV");
-            // Validación de los campos
             $request->validate([
                 'csv' => 'required|mimes:csv,txt'
             ]);
-            $file = $request->file('csv');
-            $fileName = $file->getClientOriginalName();
-            // Si el archivo ya existe, le añadimos un número al final
-            $i = 1;
-            while (Storage::exists(Auth::user()->name . '/' . $fileName)) {
-                $fileName = $i . '_' . $file->getClientOriginalName();
-                $i++;
-            }
-            // Guardar el archivo en la carpeta del usuario
+
+            $csv = $request->file('csv');
+            $file = new File();
+            $file->name = $csv->getClientOriginalName();
+
+            // Check if csv has more rows than the user limit
+            $rows = count(file($csv));
+
             $user = Auth::user();
-            $name = $user->name;
-            $day = date('d-m-Y');
-            $hour = date('H-i-s');
-            $path = "$name/csv/$day";
-            Storage::disk('local')->put("$path/$hour.csv", file_get_contents($file));
-            // Comprobamos que el usuario tiene los suficientes "créditos"
-            $content = Storage::get("$path/$hour.csv");
-            $rows = explode("\n", $content);
-            $count = count($rows);
             $monthlyRequests = $user->monthly_requests;
             $excutedRequests = $user->executed_requests;
-            if ($monthlyRequests !== -1 && $count > $monthlyRequests) {
+
+            if ($monthlyRequests !== -1 && $excutedRequests + $rows > $monthlyRequests) {
                 session()->flash('error', 'No tienes suficientes solicitudes restantes para procesar este archivo.');
                 return redirect()->route('dashboard');
-            } else if ($user->is_running_job) {
-                session()->flash('error', 'Ya tienes un proceso en ejecución, espera a que termine.');
+            }
+
+            $path = Auth::user()->name . '/tmp/';
+            $filePath = $path . $file->name;
+            Storage::disk('public')->putFileAs($path, $csv, $file->name);
+
+            if (!Storage::disk('public')->exists($filePath)) {
+                session()->flash('error', 'Error al guardar el archivo');
                 return redirect()->route('dashboard');
             }
-            // Obtenemos las variables necesarias para el trabajo en segundo plano
-            $rateLimit = env('PHONE_API_RATE_LIMIT', 300);
-            $phoneURL = env('PHONE_API_URL', 'https://numclass-api.nubefone.com/v2/numbers/');
-            // Actualizar el contador de solicitudes
-            $user->executed_requests = $excutedRequests + $count;
-            $user->is_running_job = true;
-            $userId = $user->id;
-            $user->save();
-            $job = new ProcessCsvFile("$path/$hour.csv", $userId, $rateLimit, $phoneURL);
-            // Comprobar si hay trabajos en la cola
+
+            $file->user_id = Auth::id();
+            $file->save();
+
+            $job = new ProcessCsvFile($filePath, $file->id);
+
             $queue = Queues::first();
             if (!$queue) {
                 $queue = new Queues();
                 $queue->save();
             }
-            $chosenQueue = /*$queue->secondary >= $queue->primary ? 'primary' : 'secondary';*/ 'primary';
+
+            $chosenQueue = $queue->secondary >= $queue->primary ? 'primary' : 'secondary';
             if ($chosenQueue === 'primary') {
                 $queue->primary = $queue->primary + 1;
             } else {
                 $queue->secondary = $queue->secondary + 1;
             }
+
             $queue->save();
-            // Redirigir a la página principal y ejecutar el trabajo en segundo plano
+
             dispatch($job)->onQueue($chosenQueue);
             session()->flash('success', 'Archivo CSV procesando en segundo plano. Te enviaremos un correo cuando esté listo.');
+
             return redirect()->route('dashboard');
         } catch (\Throwable $th) {
-            $user = Auth::user();
-            $user->is_running_job = false;
-            $user->save();
-            session()->flash('error', 'Error al procesar el archivo CSV');
-            Log::error("Error al procesar el archivo CSV");
+            Log::error("Error al guardar el archivo");
             Log::error($th);
+            return redirect()->route('dashboard');
         }
     }
 
-    public function download($username, $folder, $file)
+    public function download($fileId)
     {
         try {
-            $path = "$username/csv/$folder/$file";
-            $path = "/public/$path";
-            return Storage::download($path);
+            $user = Auth::user();
+
+            $file = File::find($fileId);
+            if (!$file || $file->user_id !== $user->id) {
+                session()->flash('error', 'No se encontró el archivo');
+                return redirect()->route('dashboard');
+            } else if (!$file->processed) {
+                session()->flash('error', 'El archivo aún no ha sido procesado');
+                return redirect()->route('dashboard');
+            }
+
+            $numbers = $file->numbers;
+
+            $content = '';
+            $header = "issued;originalOperator;originalOperatorRaw;currentOperator;currentOperatorRaw;number;prefix;type;typeDescription;queriesLeft;lastPortabilityWhen;lastPortabilityFrom;lastPortabilityFromRaw;lastPortabilityTo;lastPortabilityToRaw";
+            $content .= $header . "\n";
+
+            foreach ($numbers as $number) {
+                $content .= $number->issued . ';';
+                $content .= $number->originalOperator . ';';
+                $content .= $number->originalOperatorRaw . ';';
+                $content .= $number->currentOperator . ';';
+                $content .= $number->currentOperatorRaw . ';';
+                $content .= $number->number . ';';
+                $content .= $number->prefix . ';';
+                $content .= $number->type . ';';
+                $content .= $number->typeDescription . ';';
+                $content .= $number->queriesLeft . ';';
+                $content .= $number->lastPortabilityWhen . ';';
+                $content .= $number->lastPortabilityFrom . ';';
+                $content .= $number->lastPortabilityFromRaw . ';';
+                $content .= $number->lastPortabilityTo . ';';
+                $content .= $number->lastPortabilityToRaw . "\n";
+            }
+
+            $path = 'download/' . $file->id;
+            Storage::disk('public')->put($path, $content);
+            return Storage::disk('public')->download($path, $file->name);
         } catch (\Throwable $th) {
             Log::error("Error al descargar el archivo");
             Log::error($th);

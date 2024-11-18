@@ -20,7 +20,6 @@ return new class extends Migration
             $table->integer('monthly_requests')->default(0);
             $table->integer('executed_requests')->default(0);
             $table->boolean('is_admin')->default(false);
-            $table->boolean('is_running_job')->default(false);
             $table->rememberToken();
             $table->timestamps();
         });

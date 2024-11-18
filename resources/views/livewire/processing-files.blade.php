@@ -4,12 +4,10 @@
         <p class="text-xs">
             {{$file->name}}
         </p>
-        <a href="download/{{$file->id}}" class="text-ctp-blue">
-            <x-heroicon-o-arrow-down-on-square-stack class="size-5" />
-        </a>
+        <x-tabler-loader-2 class="size-5 animate-spin" />
     </aside>
     @endforeach
-    @if (count($files) == 0)
-    <p class="text-ctp-subtext0 text-xs">No hay archivos procesados</p>
+    @if (count($files) === 0)
+    <p class="text-ctp-subtext0 text-xs">No hay archivos en cola</p>
     @endif
 </section>

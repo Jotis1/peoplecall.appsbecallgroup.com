@@ -11,8 +11,11 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('users', function (Blueprint $table) {
-            $table->integer('progress')->default(0);
+        Schema::create('file_number', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('file_id')->constrained()->onDelete('cascade');
+            $table->foreignId('number_id')->constrained()->onDelete('cascade');
+            $table->timestamps();
         });
     }
 
@@ -21,8 +24,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('users', function (Blueprint $table) {
-            $table->dropColumn('progress');
-        });
+        Schema::dropIfExists('file_number');
     }
 };

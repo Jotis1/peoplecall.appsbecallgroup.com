@@ -3,7 +3,7 @@
         <livewire:dark-mode-button />
     </section>
     <form
-        class="flex w-full max-w-lg flex-col gap-10 rounded-md border-2 border-ctp-crust bg-ctp-mantle p-5"
+        class="flex w-full max-w-lg flex-col gap-10 rounded-md border-2 border-ctp-mantle bg-ctp-base p-5"
         wire:submit="login"
     >
         <header class="flex flex-col items-center gap-2.5">
@@ -31,26 +31,26 @@
                 type="text"
                 placeholder="Nombre de usuario"
                 wire:model="username"
-                class="h-10 rounded-md bg-ctp-base px-5 outline-none placeholder:text-ctp-subtext0"
+                class="h-10 rounded-md bg-white px-5 outline-none placeholder:text-ctp-subtext0"
             />
             <section class="flex h-10 w-full justify-between">
                 <input
                     id="password"
                     placeholder="Contraseña"
-                    class="h-10 w-full rounded-l-md bg-ctp-base px-5 outline-none placeholder:text-ctp-subtext0"
+                    class="h-10 w-full rounded-l-md bg-white px-5 outline-none placeholder:text-ctp-subtext0"
                     type="password"
                     wire:model="password"
                 />
                 <button
                     type="button"
                     id="show-password"
-                    class="flex size-10 items-center justify-center rounded-r-md bg-ctp-base"
+                    class="flex size-10 items-center justify-center rounded-r-md bg-white"
                 >
                     <x-heroicon-s-eye class="h-5 text-ctp-text" />
                 </button>
             </section>
         </section>
-        <button type="submit" class="flex h-10 w-full items-center justify-center rounded-md bg-ctp-crust">
+        <button type="submit" class="flex h-10 w-full items-center justify-center rounded-md bg-ctp-mantle">
             <p wire:loading.remove>Iniciar sesión</p>
             <p wire:loading>
                 <x-tabler-loader-2 class="size-5 animate-spin" />

@@ -17,7 +17,7 @@
         <link rel="shortcut icon" href="{{ asset('icon.png') }}" type="image/x-icon" />
     </head>
     
-    <body class="bg-ctp-base font-sans text-sm font-medium text-ctp-text antialiased sm:text-base">
+    <body class="bg-white dark:bg-ctp-base dark:ctp-mocha font-sans text-sm font-medium text-ctp-text antialiased sm:text-base">
         {{ $slot }}
     </body>
 </html>

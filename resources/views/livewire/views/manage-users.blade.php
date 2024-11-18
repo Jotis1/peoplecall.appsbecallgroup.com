@@ -7,12 +7,12 @@
             $allUsers = App\Models\User::all();
             @endphp
             @foreach ($allUsers as $user)
-            <section wire:key="{{$user->id}}" class="flex flex-col bg-ctp-mantle rounded-md">
+            <section wire:key="{{$user->id}}" class="flex flex-col bg-ctp-base dark:bg-ctp-mantle rounded-md">
                 <article class="flex w-full flex-col items-center justify-between md:flex-row">
                     <aside
                         class="flex h-auto flex-col items-center gap-1.5 px-5 py-2.5 sm:h-12 sm:flex-row sm:gap-5 sm:py-0">
                         <p class="w-fit sm:w-64">{{ $user->name }}</p>
-                        <p class="truncate rounded-md bg-ctp-crust px-5 py-1.5 text-xs text-ctp-subtext0">
+                        <p class="truncate rounded-md bg-ctp-mantle px-5 py-1.5 text-xs text-ctp-subtext0">
                             <span class="text-ctp-blue">
                                 {{ $user->monthly_requests === -1 ? 'infinitas' : $user->monthly_requests }}
                             </span>
@@ -23,8 +23,14 @@
                         <button
                             wire:click="getFiles({{ $user->id }})"
                             class="flex size-9 items-center justify-center rounded-mdtext-ctp-blue">
-                            <x-heroicon-o-folder wire:loading.remove class="size-5" />
-                            <x-tabler-loader-2 wire:loading class="size-5 animate-spin" />
+                            <x-heroicon-o-folder
+                            wire:loading.remove
+                            wire:target="getFiles({{ $user->id }})"
+                            class="size-5" />
+                            <x-tabler-loader-2 
+                            wire:loading
+                            wire:target="getFiles({{ $user->id }})"
+                            class="size-5 animate-spin" />
                         </button>
                         <livewire:edit-users-modal
                             wire:key="{{ $user->id }}"
@@ -34,8 +40,15 @@
                         <button
                             wire:click="delete({{ $user->id }})"
                             class="flex size-9 items-center justify-center rounded-md text-ctp-maroon">
-                            <x-heroicon-o-trash wire:loading.remove class="size-5" />
-                            <x-tabler-loader-2 wire:loading class="size-5 animate-spin" />
+                            <x-heroicon-o-trash
+                            wire:loading.remove
+                            wire:target="delete({{ $user->id }})"
+                            class="size-5" />
+                            <x-tabler-loader-2
+                            wire:loading
+                            wire:target="delete({{ $user->id }})"
+                            class="size-5 animate-spin" 
+                            />
                         </button>
                     </aside>
                 </article>
@@ -49,7 +62,7 @@
                     $name = $user->name;
                     $path = 'download/'.$name.'/csv/'.$file;
                     @endphp
-                    <aside class="sm:mx-0 mx-auto flex w-full max-w-72 items-center justify-between rounded-md bg-ctp-crust p-2.5 text-ctp-subtext0">
+                    <aside class="sm:mx-0 mx-auto flex w-full max-w-72 items-center justify-between rounded-md bg-ctp-mantle p-2.5 text-ctp-subtext0">
                         <p class="text-xs">
                             {{$file}}
                         </p>

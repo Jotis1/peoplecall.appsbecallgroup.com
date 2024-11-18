@@ -13,6 +13,8 @@ use Illuminate\Support\Facades\Log;
 use GuzzleHttp\Client;
 use App\Models\User;
 use App\Mail\CsvSender;
+use App\Models\File;
+use App\Models\Number;
 use Exception;
 
 class ProcessCsvFile implements ShouldQueue
@@ -23,133 +25,109 @@ class ProcessCsvFile implements ShouldQueue
     public $tries = 5;
     public $user = null;
 
-    public function __construct(public string $path, public int $userId, public int $rateLimit, public string $phoneURL)
+    public function __construct(public string $path, public int $fileId)
     {
         $this->path = $path;
-        $this->userId = $userId;
-        $this->rateLimit = $rateLimit;
-        $this->phoneURL = $phoneURL;
+        $this->fileId = $fileId;
     }
 
     public function handle(): void
     {
         try {
-            $user = User::find($this->userId);
-            if (!$user) {
-                Log::error("User with id $this->userId not found");
-                return;
-            }
-            
-            $user->progress = 0;
-            $user->save();
+            $file = File::find($this->fileId);
+            $user = User::find($file->user_id);
+            $stream = Storage::disk('public')->readStream($this->path);
 
-            $file = $this->getCSVFileContent();
-            if (count($file) === 0) {
-                Log::error("No phone numbers found in file");
-                return;
-            }
+            $chunkSize = 10000;
+            $chunk = 0;
 
-            // Procesar los datos y escribir en tmp
-            $tmpPath = "tmp/" . $this->path;
-            $this->getDataFromAPI($file, $tmpPath);
+            $numbers = [];
+            $numberCount = 0;
 
-            Log::info("Moving file from tmp to public");
-            error_log("Moving file from tmp to public");
-            // Mover el archivo de tmp a public
-            $publicPath = "public/" . $this->path;
-            Storage::move($tmpPath, $publicPath);
+            while (($data = fgets($stream)) !== false) {
+                $data = str_replace(",", ";", $data);
+                $data = preg_replace('/\s+/', '', $data);
+                $firstRow = explode(";", $data)[0];
+                $firstRow = str_replace("\xEF\xBB\xBF", "", $firstRow);
+                $firstRow = preg_replace("/^(\+34|0034|34)/", "", $firstRow);
 
-            // Enviar el archivo al usuario
-            Log::info("Sending email to $user->email");
-            Mail::to($user->email)->send(new CsvSender($this->path, $this->userId, count($file)));
-
-            // Borrar archivo de tmp (si aún existe)
-            Storage::delete($tmpPath);
-        } catch (Exception $e) {
-            Log::error($e->getMessage());
-        } finally {
-            $user = User::find($this->userId);
-            $user->is_running_job = false;
-            $user->save();
-        }
-    }
-
-    public function getCSVFileContent()
-    {
-        try {
-            $fileContent = Storage::get($this->path);
-            $firstColumn = [];
-            $fileContent = explode("\n", $fileContent);
-
-            foreach ($fileContent as $line) {
-                $lines = str_replace(",", ";", $line);
-                $lines = preg_replace('/\s+/', '', $lines);
-                $firstRowData = explode(";", $lines)[0];
-                $firstRowData = str_replace("\xEF\xBB\xBF", "", $firstRowData);
-                $firstRowData = preg_replace("/^(\+34|0034|34)/", "", $firstRowData);
-
-                if (empty($firstRowData) || !is_numeric($firstRowData) || strlen($firstRowData) != 9 || in_array($firstRowData, $firstColumn)) {
-                    Log::info("Invalid phone number: $firstRowData");
+                if (empty($firstRow) || !is_numeric($firstRow) || strlen($firstRow) != 9) {
+                    Log::info("Invalid phone number: $firstRow");
                     continue;
                 }
-                $firstColumn[] = $firstRowData;
+
+                // find or create the number
+                $number = Number::where('issued', $firstRow)->first();
+                if (!$number) {
+                    $number = new Number();
+                    $number->issued = $firstRow;
+                    $number->save();
+                }
+
+                $file->numbers()->attach($number);
+
+                $numbers[] = $number->issued;
+                $numberCount++;
+
+                if ($numberCount === $chunkSize) {
+                    $chunk++;
+                    $this->processChunk($numbers);
+                    $numbers = [];
+                    $numberCount = 0;
+                }
             }
 
-            return $firstColumn;
-        } catch (Exception $e) {
-            Log::error($e->getMessage());
-            return null;
+            if ($numberCount > 0) {
+                $this->processChunk($numbers);
+            }
+
+            $file->processed = true;
+            $file->save();
+            $user->executed_requests += $file->numbers()->count();
+            $user->save();
+
+            Storage::disk('public')->delete($this->path);
+
+            $downloadPath = 'download/' . $file->id;
+            Mail::to($user->email)->send(new CsvSender($downloadPath, $user->id, $file->numbers()->count()));
+        } catch (\Throwable $th) {
+            Log::error("Error al procesar el archivo");
+            Log::error($th);
         }
     }
 
-    public function getDataFromAPI(array $numbers, string $tmpPath)
+    public function processChunk(array $numbers)
     {
-        $user = User::find($this->userId);
-        $client = new Client([
-            "headers" => [
-                "x-api-key" => "69mQ0MjExYzUtMDJlYy0"
-            ]
-        ]);
+        try {
+            $client = new Client([
+                "headers" => [
+                    "x-api-key" => env("PHONE_API_KEY")
+                ]
+            ]);
+            $res = $client->post(env("PHONE_API_URL"), ["json" => $numbers]);
+            $data = json_decode($res->getBody()->getContents(), true);
 
-        $header = "issued;originalOperator;originalOperatorRaw;currentOperator;currentOperatorRaw;number;prefix;type;typeDescription;queriesLeft;lastPortabilityWhen;lastPortabilityFrom;lastPortabilityFromRaw;lastPortabilityTo;lastPortabilityToRaw";
-        Storage::put($tmpPath, $header); // Guardamos el header en tmp
-
-        $chunks = array_chunk($numbers, 10000);
-        $totalChunks = count($chunks);
-        $currentChunk = 1;
-        foreach ($chunks as $chunk) {
-            Log::info("Processing chunk $currentChunk of $totalChunks");
-            error_log("Processing chunk $currentChunk of $totalChunks");
-            $response = $client->post($this->phoneURL, ["json" => $chunk]);
-            $dataArray = json_decode($response->getBody(), true);
-
-            foreach ($dataArray as $data) {
-                // Extraemos los datos como antes
-                $message = implode(";", [
-                    $data["issued"] ?? "",
-                    $data["originalOperator"] ?? "",
-                    $data["originalOperatorRaw"] ?? "",
-                    $data["currentOperator"] ?? "",
-                    $data["currentOperatorRaw"] ?? "",
-                    $data["number"] ?? "",
-                    $data["prefix"] ?? "",
-                    $data["type"] ?? "",
-                    $data["typeDescription"] ?? "",
-                    $data["lastPortability"]["when"] ?? "",
-                    $data["lastPortability"]["from"] ?? "",
-                    $data["lastPortability"]["fromRaw"] ?? "",
-                    $data["lastPortability"]["to"] ?? "",
-                    $data["lastPortability"]["toRaw"] ?? "",
-                ]);
-                Storage::append($tmpPath, $message); // Guardamos los mensajes en tmp
+            foreach ($data as $response) {
+                $number = Number::where('issued', $response["issued"])->first();
+                $number->originalOperator = $response["originalOperator"] ?? null;
+                $number->originalOperatorRaw = $response["originalOperatorRaw"] ?? null;
+                $number->currentOperator = $response["currentOperator"] ?? null;
+                $number->currentOperatorRaw = $response["currentOperatorRaw"] ?? null;
+                $number->number = $response["number"] ?? null;
+                $number->prefix = $response["prefix"] ?? null;
+                $number->type = $response["type"] ?? null;
+                $number->typeDescription = $response["typeDescription"] ?? null;
+                $number->queriesLeft = $response["queriesLeft"] ?? null;
+                $number->lastPortability = $response["lastPortability"]["when"] ?? null;
+                $number->lastPortabilityWhen = $response["lastPortability"]["from"] ?? null;
+                $number->lastPortabilityFrom = $response["lastPortability"]["fromRaw"] ?? null;
+                $number->lastPortabilityTo = $response["lastPortability"]["to"] ?? null;
+                $number->lastPortabilityToRaw = $response["lastPortability"]["toRaw"] ?? null;
+                $number->save();
             }
-
-            // Guardar respuesta completa en un archivo separado por bloque
-            Storage::append("public/save/" . basename($tmpPath), $response->getBody());
-            
-            $user->progress = ($currentChunk / $totalChunks) * 100;
-            $user->save();
-            $currentChunk++;
+        } catch (\Throwable $th) {
+            Log::error("Error al procesar el chunk");
+            Log::error($th);
         }
     }
 }

@@ -5,7 +5,7 @@ namespace App\Livewire;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Component;
 
-class ProcessedFiles extends Component
+class ProcessingFiles extends Component
 {
     public $files = [];
 
@@ -15,11 +15,11 @@ class ProcessedFiles extends Component
         if (!$user)
             return;
 
-        $this->files = $user->files()->where('processed', true)->get();
+        $this->files = $user->files()->where('processed', false)->get();
     }
 
     public function render()
     {
-        return view('livewire.processed-files');
+        return view('livewire.processing-files');
     }
 }

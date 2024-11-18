@@ -242,9 +242,9 @@ video {
     --ctp-surface2: 172, 176, 190;
     --ctp-surface1: 188, 192, 204;
     --ctp-surface0: 204, 208, 218;
-    --ctp-base: 239, 241, 245;
-    --ctp-mantle: 230, 233, 239;
-    --ctp-crust: 220, 224, 232;
+    --white: 239, 241, 245;
+    --ctp-base: 230, 233, 239;
+    --ctp-mantle: 220, 224, 232;
 }
 .ctp-mocha {
     --ctp-rosewater: 245, 224, 220;
@@ -270,9 +270,9 @@ video {
     --ctp-surface2: 88, 91, 112;
     --ctp-surface1: 69, 71, 90;
     --ctp-surface0: 49, 50, 68;
-    --ctp-base: 30, 30, 46;
-    --ctp-mantle: 24, 24, 37;
-    --ctp-crust: 17, 17, 27;
+    --white: 30, 30, 46;
+    --ctp-base: 24, 24, 37;
+    --ctp-mantle: 17, 17, 27;
 }
 *,
 :before,
@@ -543,32 +543,32 @@ video {
     --tw-border-opacity: 1;
     border-color: rgba(var(--ctp-blue), var(--tw-border-opacity));
 }
-.border-ctp-crust {
+.border-ctp-mantle {
     --tw-border-opacity: 1;
-    border-color: rgba(var(--ctp-crust), var(--tw-border-opacity));
+    border-color: rgba(var(--ctp-mantle), var(--tw-border-opacity));
 }
 .border-ctp-surface2 {
     --tw-border-opacity: 1;
     border-color: rgba(var(--ctp-surface2), var(--tw-border-opacity));
 }
-.bg-ctp-base {
+.bg-white {
     --tw-bg-opacity: 1;
-    background-color: rgba(var(--ctp-base), var(--tw-bg-opacity));
+    background-color: rgba(var(--white), var(--tw-bg-opacity));
 }
 .bg-ctp-blue {
     --tw-bg-opacity: 1;
     background-color: rgba(var(--ctp-blue), var(--tw-bg-opacity));
 }
-.bg-ctp-crust {
-    --tw-bg-opacity: 1;
-    background-color: rgba(var(--ctp-crust), var(--tw-bg-opacity));
-}
 .bg-ctp-mantle {
     --tw-bg-opacity: 1;
     background-color: rgba(var(--ctp-mantle), var(--tw-bg-opacity));
 }
-.bg-ctp-mantle\/60 {
-    background-color: rgba(var(--ctp-mantle), 0.6);
+.bg-ctp-base {
+    --tw-bg-opacity: 1;
+    background-color: rgba(var(--ctp-base), var(--tw-bg-opacity));
+}
+.bg-ctp-base\/60 {
+    background-color: rgba(var(--ctp-base), 0.6);
 }
 .p-10 {
     padding: 2.5rem;
@@ -638,9 +638,9 @@ video {
     --tw-text-opacity: 1;
     color: rgba(var(--ctp-blue), var(--tw-text-opacity));
 }
-.text-ctp-crust {
+.text-ctp-mantle {
     --tw-text-opacity: 1;
-    color: rgba(var(--ctp-crust), var(--tw-text-opacity));
+    color: rgba(var(--ctp-mantle), var(--tw-text-opacity));
 }
 .text-ctp-green {
     --tw-text-opacity: 1;
