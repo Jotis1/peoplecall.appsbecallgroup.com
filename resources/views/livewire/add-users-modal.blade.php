@@ -1,11 +1,17 @@
 <section>
-    <section class="mt-5 flex items-center justify-between">
-        <h1 class="text-lg sm:text-xl">Usuarios</h1>
+    <header class="mt-5 flex items-center justify-between">
+        <aside class="flex gap-5 items-center">
+            <a href="/"
+            class="flex h-9 px-2.5 items-center justify-center rounded-md bg-ctp-mantle">
+                <x-heroicon-c-arrow-long-left class="size-5" />
+            </a>
+            <h1 class="text-lg sm:text-xl">Usuarios</h1>
+        </aside>
         <button wire:click="toggleModal" class="flex size-9 items-center justify-center rounded-md bg-ctp-mantle">
             <x-heroicon-o-plus wire:loading.remove class="size-5" />
             <x-tabler-loader-2 wire:loading class="size-5 animate-spin" />
         </button>
-    </section>
+    </header>
     @if ($showModal)
         <section
             class="absolute left-0 top-0 flex h-dvh w-dvw items-center justify-center bg-ctp-base/60 backdrop-blur-sm"

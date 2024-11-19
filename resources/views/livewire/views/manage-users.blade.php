@@ -58,15 +58,11 @@
                     <p class="text-xs">No hay archivos disponibles</p>
                     @else
                     @foreach ($files as $file)
-                    @php
-                    $name = $user->name;
-                    $path = 'download/'.$name.'/csv/'.$file;
-                    @endphp
                     <aside class="sm:mx-0 mx-auto flex w-full max-w-72 items-center justify-between rounded-md bg-ctp-mantle p-2.5 text-ctp-subtext0">
                         <p class="text-xs">
-                            {{$file}}
+                            {{$file->name}}
                         </p>
-                        <a href="{{$path}}" class="text-ctp-blue">
+                        <a href="download/{{$file->id}}" class="text-ctp-blue">
                             <x-heroicon-o-arrow-down-on-square-stack class="size-5" />
                         </a>
                     </aside>

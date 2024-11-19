@@ -15,7 +15,6 @@ use App\Models\User;
 use App\Mail\CsvSender;
 use App\Models\File;
 use App\Models\Number;
-use Exception;
 
 class ProcessCsvFile implements ShouldQueue
 {
@@ -23,111 +22,113 @@ class ProcessCsvFile implements ShouldQueue
 
     public $timeout = 0;
     public $tries = 5;
-    public $user = null;
 
     public function __construct(public string $path, public int $fileId)
     {
-        $this->path = $path;
-        $this->fileId = $fileId;
     }
 
     public function handle(): void
     {
         try {
-            $file = File::find($this->fileId);
-            $user = User::find($file->user_id);
+            $file = File::findOrFail($this->fileId);
+            $user = User::findOrFail($file->user_id);
+
             $stream = Storage::disk('public')->readStream($this->path);
 
             $chunkSize = 10000;
-            $chunk = 0;
-
-            $numbers = [];
-            $numberCount = 0;
+            $chunk = [];
+            $numbersProcessed = 0;
 
             while (($data = fgets($stream)) !== false) {
-                $data = str_replace(",", ";", $data);
-                $data = preg_replace('/\s+/', '', $data);
-                $firstRow = explode(";", $data)[0];
-                $firstRow = str_replace("\xEF\xBB\xBF", "", $firstRow);
-                $firstRow = preg_replace("/^(\+34|0034|34)/", "", $firstRow);
+                $cleanNumber = $this->sanitizePhoneNumber($data);
 
-                if (empty($firstRow) || !is_numeric($firstRow) || strlen($firstRow) != 9) {
-                    Log::info("Invalid phone number: $firstRow");
+                if (!$cleanNumber) {
+                    Log::info("Número inválido: $data");
                     continue;
                 }
 
-                // find or create the number
-                $number = Number::where('issued', $firstRow)->first();
-                if (!$number) {
-                    $number = new Number();
-                    $number->issued = $firstRow;
-                    $number->save();
-                }
-
+                $number = $this->getOrCreateNumber($cleanNumber);
                 $file->numbers()->attach($number);
+                $chunk[] = $number->issued;
+                $numbersProcessed++;
 
-                $numbers[] = $number->issued;
-                $numberCount++;
-
-                if ($numberCount === $chunkSize) {
-                    $chunk++;
-                    $this->processChunk($numbers);
-                    $numbers = [];
-                    $numberCount = 0;
+                if (count($chunk) === $chunkSize) {
+                    $this->processChunk($chunk);
+                    $chunk = [];
                 }
             }
 
-            if ($numberCount > 0) {
-                $this->processChunk($numbers);
+            if (!empty($chunk)) {
+                $this->processChunk($chunk);
             }
 
-            $file->processed = true;
-            $file->save();
-            $user->executed_requests += $file->numbers()->count();
-            $user->save();
+            $this->finalizeProcessing($file, $user, $numbersProcessed);
 
-            Storage::disk('public')->delete($this->path);
-
-            $downloadPath = 'download/' . $file->id;
-            Mail::to($user->email)->send(new CsvSender($downloadPath, $user->id, $file->numbers()->count()));
         } catch (\Throwable $th) {
-            Log::error("Error al procesar el archivo");
-            Log::error($th);
+            Log::error("Error al procesar el archivo: " . $th->getMessage(), ['exception' => $th]);
         }
     }
 
-    public function processChunk(array $numbers)
+    private function sanitizePhoneNumber(string $data): ?string
+    {
+        $data = str_replace(",", ";", trim($data));
+        $number = str_replace("\xEF\xBB\xBF", "", explode(";", $data)[0]);
+        $number = preg_replace("/^(\+34|0034|34)/", "", $number);
+
+        return (is_numeric($number) && strlen($number) === 9) ? $number : null;
+    }
+
+    private function getOrCreateNumber(string $issued): Number
+    {
+        return Number::firstOrCreate(['issued' => $issued]);
+    }
+
+    private function processChunk(array $numbers): void
     {
         try {
-            $client = new Client([
-                "headers" => [
-                    "x-api-key" => env("PHONE_API_KEY")
-                ]
-            ]);
-            $res = $client->post(env("PHONE_API_URL"), ["json" => $numbers]);
-            $data = json_decode($res->getBody()->getContents(), true);
+            $client = new Client(['headers' => ['x-api-key' => env('PHONE_API_KEY')]]);
+            $response = $client->post(env('PHONE_API_URL'), ['json' => $numbers]);
+            $data = json_decode($response->getBody()->getContents(), true);
 
-            foreach ($data as $response) {
-                $number = Number::where('issued', $response["issued"])->first();
-                $number->originalOperator = $response["originalOperator"] ?? null;
-                $number->originalOperatorRaw = $response["originalOperatorRaw"] ?? null;
-                $number->currentOperator = $response["currentOperator"] ?? null;
-                $number->currentOperatorRaw = $response["currentOperatorRaw"] ?? null;
-                $number->number = $response["number"] ?? null;
-                $number->prefix = $response["prefix"] ?? null;
-                $number->type = $response["type"] ?? null;
-                $number->typeDescription = $response["typeDescription"] ?? null;
-                $number->queriesLeft = $response["queriesLeft"] ?? null;
-                $number->lastPortability = $response["lastPortability"]["when"] ?? null;
-                $number->lastPortabilityWhen = $response["lastPortability"]["from"] ?? null;
-                $number->lastPortabilityFrom = $response["lastPortability"]["fromRaw"] ?? null;
-                $number->lastPortabilityTo = $response["lastPortability"]["to"] ?? null;
-                $number->lastPortabilityToRaw = $response["lastPortability"]["toRaw"] ?? null;
-                $number->save();
+            foreach ($data as $details) {
+                $this->updateNumberDetails($details);
             }
         } catch (\Throwable $th) {
-            Log::error("Error al procesar el chunk");
-            Log::error($th);
+            Log::error("Error al procesar el chunk: " . $th->getMessage(), ['exception' => $th]);
         }
+    }
+
+    private function updateNumberDetails(array $details): void
+    {
+        $number = Number::where('issued', $details['issued'])->first();
+        if ($number) {
+            $number->fill([
+                'originalOperator' => $details['originalOperator'] ?? null,
+                'originalOperatorRaw' => $details['originalOperatorRaw'] ?? null,
+                'currentOperator' => $details['currentOperator'] ?? null,
+                'currentOperatorRaw' => $details['currentOperatorRaw'] ?? null,
+                'number' => $details['number'] ?? null,
+                'prefix' => $details['prefix'] ?? null,
+                'type' => $details['type'] ?? null,
+                'typeDescription' => $details['typeDescription'] ?? null,
+                'queriesLeft' => $details['queriesLeft'] ?? null,
+                'lastPortabilityWhen' => $details['lastPortability']['when'] ?? null,
+                'lastPortabilityFrom' => $details['lastPortability']['from'] ?? null,
+                'lastPortabilityFromRaw' => $details['lastPortability']['fromRaw'] ?? null,
+                'lastPortabilityTo' => $details['lastPortability']['to'] ?? null,
+                'lastPortabilityToRaw' => $details['lastPortability']['toRaw'] ?? null,
+            ])->save();
+        }
+    }
+
+    private function finalizeProcessing(File $file, User $user, int $numbersProcessed): void
+    {
+        $file->update(['processed' => true]);
+        $user->increment('executed_requests', $numbersProcessed);
+
+        Storage::disk('public')->delete($this->path);
+
+        $downloadPath = "download/{$file->id}";
+        Mail::to($user->email)->send(new CsvSender($downloadPath, $user->id, $numbersProcessed));
     }
 }

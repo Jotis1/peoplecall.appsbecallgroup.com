@@ -26,10 +26,14 @@
                 </article>
             </aside>
         </section>
-        <section wire:poll.5s='refreshIsRunningJob' class="mt-5 flex flex-col items-center gap-5 sm:items-start">
+        <section class="mt-5 flex flex-col items-center gap-5 sm:items-start">
             <h1 class="text-lg sm:text-xl">Subida de archivos</h1>
             @if (@session('success'))
-            <p class="text-sm text-ctp-green">{{ session('success') }}</p>
+            <section class="w-72 rounded-md bg-ctp-mantle p-5">
+                <p class="text-xs font-medium">
+                    {{ session('success') }}
+                </p>
+            </section>
             @endif
             <form action="post-csv" method="POST" class="flex flex-col gap-5" enctype="multipart/form-data">
                 @csrf
