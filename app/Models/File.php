@@ -12,7 +12,7 @@ class File extends Model
     /**
      * Los atributos que se pueden asignar masivamente.
      */
-    protected $fillable = ['name', 'user_id', 'processed'];
+    protected $fillable = ['name', 'user_id', 'processed', 'downloading', 'downloaded'];
 
     /**
      * Relación con el modelo `Number`.

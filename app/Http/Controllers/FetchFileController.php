@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Jobs\ProcessDownload;
 use App\Models\Queues;
 use App\Jobs\ProcessCsvFile;
 use App\Models\File;
@@ -9,19 +10,29 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Log;
+use Response;
 
 class FetchFileController extends Controller
 {
     public function save(Request $request)
     {
         try {
+            error_log("Save file");
             $request->validate([
-                'csv' => 'required|mimes:csv,txt'
+                // max 10mb
+                'csv' => 'required|mimes:csv,txt|max:10000',
             ]);
 
+            error_log("Validated");
             $csv = $request->file('csv');
             $file = new File();
-            $file->name = $csv->getClientOriginalName();
+            // check if a file with the same name exists and add a number to the name
+            $exists = File::where('name', $csv->getClientOriginalName())->first();
+            if ($exists) {
+                $file->name = time() . '_' . $csv->getClientOriginalName();
+            } else {
+                $file->name = $csv->getClientOriginalName();
+            }
 
             // Check if csv has more rows than the user limit
             $rows = count(file($csv));
@@ -47,7 +58,7 @@ class FetchFileController extends Controller
             $file->user_id = Auth::id();
             $file->save();
 
-            $job = new ProcessCsvFile($filePath, $file->id);
+            $job = new ProcessCsvFile($filePath, $file->id, $rows);
 
             $queue = Queues::first();
             if (!$queue) {
@@ -55,16 +66,9 @@ class FetchFileController extends Controller
                 $queue->save();
             }
 
-            $chosenQueue = $queue->secondary >= $queue->primary ? 'primary' : 'secondary';
-            if ($chosenQueue === 'primary') {
-                $queue->primary = $queue->primary + 1;
-            } else {
-                $queue->secondary = $queue->secondary + 1;
-            }
-
             $queue->save();
 
-            dispatch($job)->onQueue($chosenQueue);
+            dispatch($job)->onQueue('primary');
             session()->flash('success', 'Archivo CSV procesando en segundo plano. Te enviaremos un correo cuando esté listo.');
 
             return redirect()->route('dashboard');
@@ -79,46 +83,26 @@ class FetchFileController extends Controller
     {
         try {
             $user = Auth::user();
-
             $file = File::find($fileId);
+
             if (!$file || $file->user_id !== $user->id) {
                 session()->flash('error', 'No se encontró el archivo');
                 return redirect()->route('dashboard');
-            } else if (!$file->processed) {
+            } elseif (!$file->processed) {
                 session()->flash('error', 'El archivo aún no ha sido procesado');
                 return redirect()->route('dashboard');
             }
 
-            $numbers = $file->numbers;
+            // Despacha el job
+            $job = new ProcessDownload($fileId);
+            dispatch($job)->onQueue('primary');
 
-            $content = '';
-            $header = "issued;originalOperator;originalOperatorRaw;currentOperator;currentOperatorRaw;number;prefix;type;typeDescription;queriesLeft;lastPortabilityWhen;lastPortabilityFrom;lastPortabilityFromRaw;lastPortabilityTo;lastPortabilityToRaw";
-            $content .= $header . "\n";
-
-            foreach ($numbers as $number) {
-                $content .= $number->issued . ';';
-                $content .= $number->originalOperator . ';';
-                $content .= $number->originalOperatorRaw . ';';
-                $content .= $number->currentOperator . ';';
-                $content .= $number->currentOperatorRaw . ';';
-                $content .= $number->number . ';';
-                $content .= $number->prefix . ';';
-                $content .= $number->type . ';';
-                $content .= $number->typeDescription . ';';
-                $content .= $number->queriesLeft . ';';
-                $content .= $number->lastPortabilityWhen . ';';
-                $content .= $number->lastPortabilityFrom . ';';
-                $content .= $number->lastPortabilityFromRaw . ';';
-                $content .= $number->lastPortabilityTo . ';';
-                $content .= $number->lastPortabilityToRaw . "\n";
-            }
-
-            $path = 'download/' . $file->id;
-            Storage::disk('public')->put($path, $content);
-            return Storage::disk('public')->download($path, $file->name);
+            return redirect()->route('dashboard');
         } catch (\Throwable $th) {
             Log::error("Error al descargar el archivo");
             Log::error($th);
         }
     }
+
+
 }

@@ -8,22 +8,18 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
-use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Log;
-use GuzzleHttp\Client;
 use App\Models\User;
-use App\Mail\CsvSender;
 use App\Models\File;
-use App\Models\Number;
 
 class ProcessCsvFile implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    public $timeout = 0;
+    public $timeout = 0; // Permitir procesamiento largo
     public $tries = 5;
 
-    public function __construct(public string $path, public int $fileId)
+    public function __construct(public string $path, public int $fileId, public int $fileLines)
     {
     }
 
@@ -34,35 +30,36 @@ class ProcessCsvFile implements ShouldQueue
             $user = User::findOrFail($file->user_id);
 
             $stream = Storage::disk('public')->readStream($this->path);
-
-            $chunkSize = 10000;
+            $chunkSize = 10000; // Tamaño del chunk
             $chunk = [];
             $numbersProcessed = 0;
+            $currentChunk = 0;
+            $totalChunks = ceil($this->fileLines / $chunkSize);
 
-            while (($data = fgets($stream)) !== false) {
-                $cleanNumber = $this->sanitizePhoneNumber($data);
+            // Leer línea por línea
+            while (($line = fgets($stream)) !== false) {
+                $cleanNumber = $this->sanitizePhoneNumber($line);
 
                 if (!$cleanNumber) {
-                    Log::info("Número inválido: $data");
+                    Log::info("Número inválido: $line");
                     continue;
                 }
 
-                $number = $this->getOrCreateNumber($cleanNumber);
-                $file->numbers()->attach($number);
-                $chunk[] = $number->issued;
+                $chunk[] = $cleanNumber;
                 $numbersProcessed++;
 
                 if (count($chunk) === $chunkSize) {
-                    $this->processChunk($chunk);
-                    $chunk = [];
+                    $this->dispatchChunkJob($chunk, ++$currentChunk, $totalChunks, $user->id, $numbersProcessed);
+                    $chunk = []; // Limpiar el chunk
                 }
             }
 
+            // Procesar cualquier chunk restante
             if (!empty($chunk)) {
-                $this->processChunk($chunk);
+                $this->dispatchChunkJob($chunk, ++$currentChunk, $totalChunks, $user->id, $numbersProcessed);
             }
 
-            $this->finalizeProcessing($file, $user, $numbersProcessed);
+            $this->finalizeProcessing($user, $numbersProcessed);
 
         } catch (\Throwable $th) {
             Log::error("Error al procesar el archivo: " . $th->getMessage(), ['exception' => $th]);
@@ -78,57 +75,14 @@ class ProcessCsvFile implements ShouldQueue
         return (is_numeric($number) && strlen($number) === 9) ? $number : null;
     }
 
-    private function getOrCreateNumber(string $issued): Number
+    private function dispatchChunkJob(array $chunk, int $currentChunk, int $totalChunks, int $userId, int $numbersProcessed): void
     {
-        return Number::firstOrCreate(['issued' => $issued]);
+        // Crea un nuevo job para procesar este chunk
+        ProcessChunk::dispatch($chunk, $this->fileId, $currentChunk, $totalChunks, $userId, $numbersProcessed, $this->path)->onQueue('secondary');
     }
 
-    private function processChunk(array $numbers): void
+    private function finalizeProcessing(User $user, int $numbersProcessed): void
     {
-        try {
-            $client = new Client(['headers' => ['x-api-key' => env('PHONE_API_KEY')]]);
-            $response = $client->post(env('PHONE_API_URL'), ['json' => $numbers]);
-            $data = json_decode($response->getBody()->getContents(), true);
-
-            foreach ($data as $details) {
-                $this->updateNumberDetails($details);
-            }
-        } catch (\Throwable $th) {
-            Log::error("Error al procesar el chunk: " . $th->getMessage(), ['exception' => $th]);
-        }
-    }
-
-    private function updateNumberDetails(array $details): void
-    {
-        $number = Number::where('issued', $details['issued'])->first();
-        if ($number) {
-            $number->fill([
-                'originalOperator' => $details['originalOperator'] ?? null,
-                'originalOperatorRaw' => $details['originalOperatorRaw'] ?? null,
-                'currentOperator' => $details['currentOperator'] ?? null,
-                'currentOperatorRaw' => $details['currentOperatorRaw'] ?? null,
-                'number' => $details['number'] ?? null,
-                'prefix' => $details['prefix'] ?? null,
-                'type' => $details['type'] ?? null,
-                'typeDescription' => $details['typeDescription'] ?? null,
-                'queriesLeft' => $details['queriesLeft'] ?? null,
-                'lastPortabilityWhen' => $details['lastPortability']['when'] ?? null,
-                'lastPortabilityFrom' => $details['lastPortability']['from'] ?? null,
-                'lastPortabilityFromRaw' => $details['lastPortability']['fromRaw'] ?? null,
-                'lastPortabilityTo' => $details['lastPortability']['to'] ?? null,
-                'lastPortabilityToRaw' => $details['lastPortability']['toRaw'] ?? null,
-            ])->save();
-        }
-    }
-
-    private function finalizeProcessing(File $file, User $user, int $numbersProcessed): void
-    {
-        $file->update(['processed' => true]);
         $user->increment('executed_requests', $numbersProcessed);
-
-        Storage::disk('public')->delete($this->path);
-
-        $downloadPath = "download/{$file->id}";
-        Mail::to($user->email)->send(new CsvSender($downloadPath, $user->id, $numbersProcessed));
     }
 }
