@@ -6,10 +6,11 @@
         </p>
         @if ($file->downloading)
             <x-tabler-loader-2 class="size-5 animate-spin" />
+        @else
+            <a href="{{ route('download', [ 'file'=> $file->id ]) }}" class="text-ctp-blue">
+                <x-heroicon-o-arrow-down-on-square-stack class="size-5" />
+            </a>
         @endif
-        <a href="download/{{$file->id}}" class="text-ctp-blue">
-            <x-heroicon-o-arrow-down-on-square-stack class="size-5" />
-        </a>
     </aside>
     @endforeach
     @if (count($files) == 0)

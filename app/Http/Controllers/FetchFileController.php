@@ -93,10 +93,11 @@ class FetchFileController extends Controller
                 return redirect()->route('dashboard');
             }
 
-            // Despacha el job
-            $job = new ProcessDownload($fileId);
-            dispatch($job)->onQueue('primary');
+            if ($file->downloaded) {
+                return Storage::disk('public')->download($file->name);
+            }
 
+            // Despacha el job
             return redirect()->route('dashboard');
         } catch (\Throwable $th) {
             Log::error("Error al descargar el archivo");

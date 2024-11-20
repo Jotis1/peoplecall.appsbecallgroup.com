@@ -2,25 +2,32 @@
 
 namespace App\Jobs;
 
+use App\Exports\FilesExport;
+use App\Mail\CsvSender;
+use App\Models\File;
+use App\Jobs\ProcessDownloadChunk;
+use App\Models\User;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
-use App\Models\File;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Storage;
+use Maatwebsite\Excel\Facades\Excel;
+use Mail;
 
 class ProcessDownload implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
+    public int $fileId;
+
     /**
      * Create a new job instance.
      */
-    public function __construct(public int $fileId)
+    public function __construct(int $fileId)
     {
-        //
+        $this->fileId = $fileId;
     }
 
     /**
@@ -29,46 +36,20 @@ class ProcessDownload implements ShouldQueue
     public function handle(): void
     {
         try {
-            $file = File::find($this->fileId);
+            $file = File::findOrFail($this->fileId);
+            $user = User::findOrFail($file->user_id);
             $file->downloading = true;
             $file->save();
-            $filename = $file->name;
-            $filePath = storage_path('app/public/' . $filename); // Ruta donde guardar el archivo
-            $csvFile = fopen($filePath, 'w');
 
-            // Escribir los encabezados del CSV
-            $headers = ['issued', 'originalOperator', 'originalOperatorRaw', 'currentOperator', 'currentOperatorRaw', 'number', 'prefix', 'type', 'typeDescription', 'queriesLeft', 'lastPortabilityWhen', 'lastPortabilityFrom', 'lastPortabilityFromRaw', 'lastPortabilityTo', 'lastPortabilityToRaw'];
-            fputcsv($csvFile, $headers);
+            // (new FilesExport($this->fileId))->store($file->name, 'local');
+            Excel::store(new FilesExport($this->fileId), $file->name, 'local', \Maatwebsite\Excel\Excel::CSV);
 
-            // Usar chunking para procesar los números en bloques
-            $file->numbers()->chunk(1000, function ($numbers) use ($csvFile) {
-                error_log("Procesando chunk de " . count($numbers) . " registros");
-                foreach ($numbers as $number) {
-                    fputcsv($csvFile, [
-                        $number->issued,
-                        $number->originalOperator,
-                        $number->originalOperatorRaw,
-                        $number->currentOperator,
-                        $number->currentOperatorRaw,
-                        $number->number,
-                        $number->prefix,
-                        $number->type,
-                        $number->typeDescription,
-                        $number->queriesLeft,
-                        $number->lastPortabilityWhen,
-                        $number->lastPortabilityFrom,
-                        $number->lastPortabilityFromRaw,
-                        $number->lastPortabilityTo,
-                        $number->lastPortabilityToRaw,
-                    ]);
-                }
-            });
-
-            fclose($csvFile);
-
-            // Puedes almacenar el archivo en algún lugar accesible (por ejemplo, public)
-            Storage::disk('public')->put($filename, file_get_contents($filePath));
+            $file->downloaded = true;
             $file->downloading = false;
+            $file->save();
+
+            // Aquí deberías enviar el correo o notificar al usuario que el archivo está listo.
+            Mail::to($user->email)->send(new CsvSender($file->name, $user->id));
         } catch (\Throwable $th) {
             Log::error("Error al procesar el archivo para descarga");
             Log::error($th);

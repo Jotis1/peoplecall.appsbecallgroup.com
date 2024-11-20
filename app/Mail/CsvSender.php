@@ -17,11 +17,10 @@ class CsvSender extends Mailable
     /**
      * Create a new message instance.
      */
-    public function __construct(public string $path, public int $userId, public int $rows)
+    public function __construct(public string $path, public int $userId)
     {
         $this->path = $path;
         $this->userId = $userId;
-        $this->rows = $rows;
     }
 
     /**

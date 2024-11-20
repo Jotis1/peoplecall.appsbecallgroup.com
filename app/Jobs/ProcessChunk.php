@@ -2,9 +2,7 @@
 
 namespace App\Jobs;
 
-use App\Mail\CsvSender;
 use App\Models\File;
-use App\Models\User;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -13,7 +11,6 @@ use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Log;
 use GuzzleHttp\Client;
 use App\Models\Number;
-use Mail;
 use Storage;
 
 class ProcessChunk implements ShouldQueue
@@ -34,7 +31,6 @@ class ProcessChunk implements ShouldQueue
     public function handle(): void
     {
         try {
-            $user = User::findOrFail($this->userId);
             $file = File::findOrFail($this->fileId);
 
             $client = new Client(['headers' => ['x-api-key' => env('PHONE_API_KEY')]]);
@@ -45,7 +41,6 @@ class ProcessChunk implements ShouldQueue
 
             $numbersToUpdate = [];
             foreach ($data as $details) {
-                Log::info("Número procesado: " . $details['issued']);
                 $numbersToUpdate[] = [
                     'issued' => $details['issued'],
                     'originalOperator' => $details['originalOperator'] ?? null,
@@ -91,9 +86,9 @@ class ProcessChunk implements ShouldQueue
 
             if ($this->currentChunk === $this->totalChunks) {
                 $file->update(['processed' => true]);
-                $downloadPath = "download/{$file->id}";
-                Mail::to($user->email)->send(new CsvSender($downloadPath, $user->id, $this->numbersProcessed));
                 Storage::disk('public')->delete($this->path);
+                $job = new ProcessDownload($this->fileId);
+                dispatch($job)->onQueue('downloads');
             }
 
         } catch (\Throwable $th) {
