@@ -16,7 +16,6 @@ class ProcessCsvFile implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    public $timeout = 0; // Permitir procesamiento largo
     public $tries = 5;
 
     public function __construct(public string $path, public int $fileId, public int $fileLines)
