@@ -78,7 +78,7 @@ class ProcessCsvFile implements ShouldQueue
     private function dispatchChunkJob(array $chunk, int $currentChunk, int $totalChunks, int $userId, int $numbersProcessed): void
     {
         // Crea un nuevo job para procesar este chunk
-        ProcessChunk::dispatch($chunk, $this->fileId, $currentChunk, $totalChunks, $userId, $numbersProcessed, $this->path)->onQueue('secondary');
+        ProcessChunk::dispatch($chunk, $this->fileId, $currentChunk, $totalChunks, $userId, $numbersProcessed, $this->path);
     }
 
     private function finalizeProcessing(User $user, int $numbersProcessed): void

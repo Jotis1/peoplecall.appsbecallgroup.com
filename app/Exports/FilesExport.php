@@ -3,16 +3,18 @@
 namespace App\Exports;
 
 use App\Models\File;
-use Illuminate\Support\Facades\Log;
+
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Maatwebsite\Excel\Concerns\Exportable;
 use Maatwebsite\Excel\Concerns\FromQuery;
 use Maatwebsite\Excel\Concerns\WithHeadings;
+use Maatwebsite\Excel\Excel;
 
-class FilesExport implements FromQuery, WithHeadings
+class FilesExport implements FromQuery, ShouldQueue, WithHeadings
 {
     use Exportable;
 
-    public int $queryCount;
+    private $writerType = Excel::CSV;
 
     public function __construct(public int $fileId)
     {
@@ -20,43 +22,30 @@ class FilesExport implements FromQuery, WithHeadings
 
     public function query()
     {
-        $file = File::find($this->fileId);
-        if (!$file) {
-            Log::error("Archivo no encontrado para el ID: {$this->fileId}");
-            return collect([]);
-        }
+        // quiero q me devuelva los campos:
+        // issued
+        // currentOperator
+        // last portability when
+        // last portability from
+        // last portability to
 
-        // we will return all the number associated with the file
-        $query = $file->numbers();
-        $this->queryCount = $query->count();
-        return $query;
+        return File::find($this->fileId)->numbers()->select([
+            'issued',
+            'currentOperator',
+            'lastPortabilityWhen',
+            'lastPortabilityFrom',
+            'lastPortabilityTo',
+        ]);
     }
 
-    /**
-     * Define los encabezados para la exportación.
-     *
-     * @return array
-     */
     public function headings(): array
     {
         return [
-            'ID',
-            'Issued',
-            'Original Operator',
-            'Original Operator Raw',
-            'Current Operator',
-            'Current Operator Raw',
             'Number',
-            'Prefix',
-            'Type',
-            'Type Description',
-            'Queries Left',
-            'Last Portability',
+            'Current Operator',
             'Last Portability When',
             'Last Portability From',
-            'Last Portability From Raw',
             'Last Portability To',
-            'Last Portability To Raw',
         ];
     }
 }

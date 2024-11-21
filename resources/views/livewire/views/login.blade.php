@@ -31,20 +31,20 @@
                 type="text"
                 placeholder="Nombre de usuario"
                 wire:model="username"
-                class="h-10 rounded-md bg-white px-5 outline-none placeholder:text-ctp-subtext0"
+                class="h-10 rounded-md dark:bg-ctp-mantle bg-white px-5 outline-none placeholder:text-ctp-subtext0"
             />
             <section class="flex h-10 w-full justify-between">
                 <input
                     id="password"
                     placeholder="Contraseña"
-                    class="h-10 w-full rounded-l-md bg-white px-5 outline-none placeholder:text-ctp-subtext0"
+                    class="h-10 w-full rounded-l-md dark:bg-ctp-mantle bg-white px-5 outline-none placeholder:text-ctp-subtext0"
                     type="password"
                     wire:model="password"
                 />
                 <button
                     type="button"
                     id="show-password"
-                    class="flex size-10 items-center justify-center rounded-r-md bg-white"
+                    class="flex size-10 items-center justify-center rounded-r-md dark:bg-ctp-mantle bg-white"
                 >
                     <x-heroicon-s-eye class="h-5 text-ctp-text" />
                 </button>

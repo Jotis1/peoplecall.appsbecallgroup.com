@@ -88,7 +88,7 @@ class ProcessChunk implements ShouldQueue
                 $file->update(['processed' => true]);
                 Storage::disk('public')->delete($this->path);
                 $job = new ProcessDownload($this->fileId);
-                dispatch($job)->onQueue('downloads');
+                dispatch($job);
             }
 
         } catch (\Throwable $th) {

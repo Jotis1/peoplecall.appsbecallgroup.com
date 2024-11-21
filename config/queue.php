@@ -34,16 +34,16 @@ return [
             'driver' => 'sync',
         ],
 
-        'database' => [     
+        'database' => [
             'driver' => 'database',
             'connection' => env('DB_QUEUE_CONNECTION'),
             'table' => env('DB_QUEUE_TABLE', 'jobs'),
-            'queue' => env('DB_QUEUE', 'primary'),
+            'queue' => env('DB_QUEUE', 'default'), // Cola principal
             'retry_after' => (int) env('DB_QUEUE_RETRY_AFTER', 90),
             'after_commit' => false,
         ],
 
-        'secondary' => [     
+        'secondary' => [
             'driver' => 'database',
             'connection' => env('DB_QUEUE_CONNECTION'),
             'table' => env('DB_QUEUE_TABLE', 'jobs'),

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Exports\FilesExport;
 use App\Jobs\ProcessDownload;
 use App\Models\Queues;
 use App\Jobs\ProcessCsvFile;
@@ -68,7 +69,7 @@ class FetchFileController extends Controller
 
             $queue->save();
 
-            dispatch($job)->onQueue('primary');
+            dispatch($job);
             session()->flash('success', 'Archivo CSV procesando en segundo plano. Te enviaremos un correo cuando esté listo.');
 
             return redirect()->route('dashboard');
@@ -93,12 +94,10 @@ class FetchFileController extends Controller
                 return redirect()->route('dashboard');
             }
 
-            if ($file->downloaded) {
-                return Storage::disk('public')->download($file->name);
-            }
+            (new FilesExport($fileId))->store($file->name);
 
-            // Despacha el job
-            return redirect()->route('dashboard');
+            session()->flash('success', 'Archivo descargado');
+            return redirect()->back();
         } catch (\Throwable $th) {
             Log::error("Error al descargar el archivo");
             Log::error($th);

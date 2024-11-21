@@ -7,20 +7,20 @@
             <aside class="flex flex-wrap items-center gap-5">
                 <article class="mx-auto flex h-40 min-w-72 flex-col items-center justify-around gap-2.5 rounded-md bg-ctp-base dark:bg-ctp-mantle p-5">
                     <p class="text-ctp-subtext0">Peticiones realizadas</p>
-                    <p class="text-4xl font-bold sm:text-5xl">{{ auth()->user()->executed_requests }}</p>
+                    <p class="text-4xl font-bold sm:text-5xl">{{ number_format(auth()->user()->executed_requests, 0, ',', '.') }}</p>
                     <p class="text-sm text-ctp-subtext0">este mes</p>
                 </article>
                 <article class="mx-auto flex h-40 min-w-72 flex-col items-center justify-around gap-2.5 rounded-md bg-ctp-base dark:bg-ctp-mantle p-5">
                     <p class="text-ctp-subtext0">Peticiones disponibles</p>
                     <p class="text-4xl font-bold sm:text-5xl">
-                        {{ auth()->user()->monthly_requests === -1 ? '∞' : auth()->user()->monthly_requests }}
+                        {{ auth()->user()->monthly_requests === -1 ? '∞' : number_format(auth()->user()->monthly_requests, 0, ',', '.') }}
                     </p>
                     <p class="text-sm text-ctp-subtext0">este mes</p>
                 </article>
                 <article class="mx-auto flex h-40 min-w-72 flex-col items-center justify-around gap-2.5 rounded-md bg-ctp-base dark:bg-ctp-mantle p-5">
                     <p class="text-ctp-subtext0">Peticiones restantes</p>
                     <p class="text-4xl font-bold sm:text-5xl">
-                        {{ auth()->user()->monthly_requests === -1 ? '∞' : auth()->user()->monthly_requests - auth()->user()->executed_requests }}
+                        {{ auth()->user()->monthly_requests === -1 ? '∞' : number_format(auth()->user()->monthly_requests - auth()->user()->executed_requests, 0, ',', '.') }}
                     </p>
                     <p class="text-sm text-ctp-subtext0">este mes</p>
                 </article>

@@ -19,8 +19,6 @@ class CsvSender extends Mailable
      */
     public function __construct(public string $path, public int $userId)
     {
-        $this->path = $path;
-        $this->userId = $userId;
     }
 
     /**
