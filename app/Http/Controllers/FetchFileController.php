@@ -94,10 +94,8 @@ class FetchFileController extends Controller
                 return redirect()->route('dashboard');
             }
 
-            (new FilesExport($fileId))->store($file->name);
-
             session()->flash('success', 'Archivo descargado');
-            return redirect()->back();
+            return Storage::download($file->name);
         } catch (\Throwable $th) {
             Log::error("Error al descargar el archivo");
             Log::error($th);
