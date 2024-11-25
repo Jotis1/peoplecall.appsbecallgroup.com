@@ -7,6 +7,7 @@ use App\Jobs\ProcessDownload;
 use App\Models\Queues;
 use App\Jobs\ProcessCsvFile;
 use App\Models\File;
+use DB;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
@@ -94,11 +95,52 @@ class FetchFileController extends Controller
                 return redirect()->route('dashboard');
             }
 
+            $path = storage_path('app/public/' . $file->name);
+            $path = addslashes($path);
+
+            if (file_exists($path)) {
+                unlink($path);  // Elimina el archivo si ya existe
+            }
+
+            $query = "
+                SELECT 
+                    'number', 
+                    'originalOperator', 
+                    'currentOperator', 
+                    'type', 
+                    'lastPortability', 
+                    'lastPortabilityWhen',
+                    'lastPortabilityFrom', 
+                    'lastPortabilityTo'
+                UNION ALL
+                SELECT 
+                    n.number, 
+                    n.originalOperator, 
+                    n.currentOperator, 
+                    n.type, 
+                    n.lastPortability, 
+                    n.lastPortabilityWhen,
+                    n.lastPortabilityFrom, 
+                    n.lastPortabilityTo
+                FROM numbers n
+                JOIN file_number fn ON n.id = fn.number_id
+                WHERE fn.file_id = $fileId
+                INTO OUTFILE '$path'
+                FIELDS TERMINATED BY ';' 
+                ENCLOSED BY '\"' 
+                LINES TERMINATED BY '\\n'
+            ";
+
+            DB::statement($query);
+
+            error_log("File downloaded at: " . $path);
             session()->flash('success', 'Archivo descargado');
-            return Storage::download($file->name);
+            return response()->download(storage_path('app/public/' . $file->name));
         } catch (\Throwable $th) {
             Log::error("Error al descargar el archivo");
             Log::error($th);
+            session()->flash('error', 'Error al descargar el archivo');
+            return redirect()->route('dashboard');
         }
     }
 

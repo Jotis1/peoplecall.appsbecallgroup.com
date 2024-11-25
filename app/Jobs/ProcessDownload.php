@@ -33,10 +33,12 @@ class ProcessDownload implements ShouldQueue
     {
         try {
             $file = File::findOrFail($this->fileId);
-            $file->downloading = true;
+            $user = User::findOrFail($file->user_id);
+            $file->downloaded = true;
+            $file->downloading = false;
             $file->save();
 
-            (new FilesExport($this->fileId))->store($file->name);
+            Mail::to($user->email)->send(new CsvSender($this->fileId, $user->id));
         } catch (\Throwable $th) {
             Log::error("Error al procesar el archivo para descarga");
             Log::error($th);
