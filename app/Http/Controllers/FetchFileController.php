@@ -2,17 +2,15 @@
 
 namespace App\Http\Controllers;
 
-use App\Exports\FilesExport;
-use App\Jobs\ProcessDownload;
 use App\Models\Queues;
 use App\Jobs\ProcessCsvFile;
 use App\Models\File;
-use DB;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Log;
-use Response;
+
+use DB;
 
 class FetchFileController extends Controller
 {

@@ -1,4 +1,4 @@
-<section class="flex flex-row flex-wrap gap-x-5 gap-y-2.5 w-full items-start max-w-5xl">
+<section wire:poll class="flex flex-row flex-wrap gap-x-5 gap-y-2.5 w-full items-start max-w-5xl">
     @foreach ($files as $file)
     <aside class="sm:mx-0 mx-auto flex w-full max-w-72 items-center justify-between rounded-md bg-ctp-mantle p-2.5 text-ctp-subtext0">
         <p class="text-xs">

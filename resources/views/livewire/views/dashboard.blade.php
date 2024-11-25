@@ -29,10 +29,17 @@
         <section class="mt-5 flex flex-col items-center gap-5 sm:items-start">
             <h1 class="text-lg sm:text-xl">Subida de archivos</h1>
             @if (@session('success'))
-            <section class="w-72 rounded-md bg-ctp-mantle p-5">
-                <p class="text-xs font-medium">
-                    {{ session('success') }}
-                </p>
+            <section class="absolute size-full top-0 left-0 flex items-center justify-center bg-ctp-base/60 backdrop-blur-sm z-10">
+                <section class="flex items-center gap-2.5 rounded-md bg-ctp-mantle p-5">
+                    <p class="text-xs font-medium max-w-64 w-full">
+                        {{ session('success') }}
+                    </p>
+                    <button 
+                    onclick="{{ session()->forget('success') }}"
+                    class="size-5 text-ctp-maroon">
+                        <x-heroicon-s-x-mark class="size-5" />
+                    </button>
+                </section>
             </section>
             @endif
             <form action="post-csv" method="POST" class="flex flex-col gap-5" enctype="multipart/form-data">
@@ -53,7 +60,10 @@
                         <x-heroicon-s-x-mark class="size-5" />
                     </button>
                 </section>
-                <button type="submit" id="submit-button" class="hidden h-10 w-fit items-center justify-center rounded-md bg-ctp-blue p-5 px-5 text-center text-ctp-mantle">
+                <button 
+                    type="submit" 
+                    id="submit-button" 
+                    class="hidden h-10 w-fit items-center justify-center rounded-md bg-ctp-blue p-5 px-5 text-center text-ctp-mantle">
                     <p id="submit-text">Subir archivo</p>
                     <x-tabler-loader-2 id="submit-loader" class="hidden size-5 animate-spin" />
                 </button>
@@ -61,7 +71,7 @@
         </section>
         <section class="my-5 flex flex-col items-center gap-5 sm:items-start">
             <h1 class="text-lg sm:text-xl">Archivos en cola</h1>
-            <livewire:processing-files wire:poll />
+            <livewire:processing-files/>
         </section>
         <section class="my-5 flex flex-col items-center gap-5 sm:items-start">
             <h1 class="text-lg sm:text-xl">Mis archivos</h1>
@@ -91,12 +101,14 @@
         fileButton.classList.remove('hidden');
         fileButton.classList.add('flex');
     });
-    submitButton.addEventListener('click', () => {
+    submitButton.addEventListener('click', (e) => {
+        e.preventDefault();
         const submitText = document.getElementById('submit-text');
         const submitLoader = document.getElementById('submit-loader');
         submitText.classList.add('hidden');
         submitLoader.classList.remove('hidden');
-        document.getElementById('submit-button').submit();
         submitButton.disabled = true;
+        const form = document.querySelector('form');
+        form.submit();
     });
 </script>

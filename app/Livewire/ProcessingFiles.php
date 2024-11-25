@@ -8,18 +8,11 @@ use Livewire\Component;
 class ProcessingFiles extends Component
 {
     public $files = [];
-
-    public function mount()
-    {
-        $user = Auth::user();
-        if (!$user)
-            return;
-
-        $this->files = $user->files()->where('processed', false)->get();
-    }
-
     public function render()
     {
-        return view('livewire.processing-files');
+        $this->files = Auth::user()->files()->where('processed', false)->get();
+        return view('livewire.processing-files', [
+            'files' => $this->files
+        ]);
     }
 }
