@@ -98,10 +98,6 @@ class FetchFileController extends Controller
             $path = 'csv/' . $file->name;
             $path = addslashes($path);
 
-            if (file_exists('/var/lib/mysql/' . $path)) {
-                unlink($path);  // Elimina el archivo si ya existe
-            }
-
             $query = "
                 SELECT 
                     'number', 
@@ -135,7 +131,7 @@ class FetchFileController extends Controller
 
             error_log("File downloaded at: " . $path);
             session()->flash('success', 'Archivo descargado');
-            return response()->download($path);
+            return response()->download($path)->deleteFileAfterSend(true);
         } catch (\Throwable $th) {
             Log::error("Error al descargar el archivo");
             Log::error($th);
