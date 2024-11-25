@@ -98,7 +98,7 @@ class FetchFileController extends Controller
             $path = 'csv/' . $file->name;
             $path = addslashes($path);
 
-            if (file_exists('/var/lib/mysql/' + $path)) {
+            if (file_exists('/var/lib/mysql/' . $path)) {
                 unlink($path);  // Elimina el archivo si ya existe
             }
 
