@@ -95,7 +95,7 @@ class FetchFileController extends Controller
                 return redirect()->route('dashboard');
             }
 
-            $path = base_path('csv/' . $file->name);
+            $path = 'csv/' . $file->name;
             $path = addslashes($path);
 
             if (file_exists($path)) {
