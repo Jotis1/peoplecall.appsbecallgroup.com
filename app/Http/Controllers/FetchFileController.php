@@ -95,8 +95,12 @@ class FetchFileController extends Controller
                 return redirect()->route('dashboard');
             }
 
-            $path = 'csv/' . $file->name;
+            $path = storage_path('app/public/' . $file->name);
             $path = addslashes($path);
+
+            if (file_exists($path)) {
+                unlink($path);  // Elimina el archivo si ya existe
+            }
 
             $query = "
                 SELECT 
@@ -131,7 +135,7 @@ class FetchFileController extends Controller
 
             error_log("File downloaded at: " . $path);
             session()->flash('success', 'Archivo descargado');
-            return response()->download($path)->deleteFileAfterSend(true);
+            return response()->download(storage_path('app/public/' . $file->name));
         } catch (\Throwable $th) {
             Log::error("Error al descargar el archivo");
             Log::error($th);
@@ -139,5 +143,4 @@ class FetchFileController extends Controller
             return redirect()->route('dashboard');
         }
     }
-
 }
