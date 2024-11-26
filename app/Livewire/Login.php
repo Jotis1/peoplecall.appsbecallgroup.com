@@ -26,7 +26,8 @@ class Login extends Component
         ];
     }
 
-    public function messages(){
+    public function messages()
+    {
         return [
             'username.required' => 'El campo usuario es requerido',
             'password.required' => 'El campo contraseña es requerido',
@@ -34,9 +35,10 @@ class Login extends Component
         ];
     }
 
-    public function login(){
+    public function login()
+    {
         // Validación de los campos
-        $validated = $this->validate(); 
+        $validated = $this->validate();
         $valid_username = $validated['username'];
         $valid_password = $validated['password'];
         // Variables de entorno
@@ -69,10 +71,10 @@ class Login extends Component
             ]);
             // Decodificamos la respuesta
             $responseStatus = $response->getStatusCode();
-            $reponseOk = $response->getReasonPhrase();  
+            $reponseOk = $response->getReasonPhrase();
             $responseBody = json_decode($response->getBody());
             // Si la respuesta es fallida
-            if($responseStatus != 200 || $reponseOk != 'OK' || $responseBody->grupo != 'True'){
+            if ($responseStatus != 200 || $reponseOk != 'OK' || $responseBody->grupo != 'True') {
                 return session()->flash('error', 'Usuario o contraseña incorrectos');
             }
             // Si es exitosa sacamos la información del usuario
@@ -94,13 +96,13 @@ class Login extends Component
             $grupos = explode(',', $grupos);
             $isAdmin = False;
             // Si el usuario tiene el grupo de peoplecalladmin le ponemos "admin"
-            if(in_array('peoplecalladmin', $grupos)){
+            if (in_array('peoplecalladmin', $grupos)) {
                 $isAdmin = True;
             }
             // Buscamos al usuario en la base de datos
             $user = User::where('name', $valid_username)->first();
             // Si el usuario no existe lo creamos
-            if(!$user){
+            if (!$user) {
                 $user = new User();
                 $user->name = $valid_username;
                 $user->password = Hash::make($valid_password);
@@ -109,9 +111,10 @@ class Login extends Component
                 $user->save();
             }
             // Si su contraseña es __init__ la cambiamos por la introducida
-            if($user->password == '__init__'){
+            if ($user->password == '__init__') {
                 $user->email = $email ?? '';
                 $user->password = Hash::make($valid_password);
+                $user->is_admin = $isAdmin;
                 $user->save();
             }
             // Iniciamos sesión y redirigimos al dashboard
@@ -125,7 +128,7 @@ class Login extends Component
 
     #[Title('Login')]
     public function render()
-    {   
+    {
         return view('livewire.views.login');
     }
 }
