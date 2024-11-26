@@ -29,13 +29,13 @@
         <section class="mt-5 flex flex-col items-center gap-5 sm:items-start">
             <h1 class="text-lg sm:text-xl">Subida de archivos</h1>
             @if (@session('success'))
-            <section class="absolute size-full top-0 left-0 flex items-center justify-center bg-ctp-base/60 backdrop-blur-sm z-10">
+            <section id="success-modal" class="absolute size-full top-0 left-0 flex items-center justify-center bg-ctp-base/60 backdrop-blur-sm z-10">
                 <section class="flex items-center gap-2.5 rounded-md bg-ctp-mantle p-5">
                     <p class="text-xs font-medium max-w-64 w-full">
                         {{ session('success') }}
                     </p>
                     <button
-                    onclick="{{ route('dashboard') }}"
+                    onclick="document.getElementById('success-modal').classList.add('hidden');"
                     class="size-5 text-ctp-maroon">
                         <x-heroicon-s-x-mark class="size-5" />
                     </button>
