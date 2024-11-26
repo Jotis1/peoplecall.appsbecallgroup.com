@@ -9,7 +9,7 @@ use App\Models\IpWhitelist;
 class AddIpsModal extends Component
 {
     public $showModal = false;
-    #[Validate('ip')]
+    #[Validate('required|ip')]
     public $ip;
 
     public function rules()
