@@ -13,19 +13,4 @@ class Dashboard extends Component
     {
         return view('livewire.views.dashboard');
     }
-
-    public $isRunningJob = false;
-
-    public function refreshIsRunningJob()
-    {
-        $this->isRunningJob = Auth::user()->is_running_job;
-    }
-
-    public $progress = 0;
-
-    public function refreshProgress()
-    {
-        error_log(Auth::user()->progress);
-        $this->progress = Auth::user()->progress;
-    }
 }

@@ -34,8 +34,8 @@
                     <p class="text-xs font-medium max-w-64 w-full">
                         {{ session('success') }}
                     </p>
-                    <button 
-                    onclick="{{ session()->forget('success') }}"
+                    <button
+                    onclick="{{ route('dashboard') }}"
                     class="size-5 text-ctp-maroon">
                         <x-heroicon-s-x-mark class="size-5" />
                     </button>
@@ -102,13 +102,9 @@
         fileButton.classList.add('flex');
     });
     submitButton.addEventListener('click', (e) => {
-        e.preventDefault();
         const submitText = document.getElementById('submit-text');
         const submitLoader = document.getElementById('submit-loader');
         submitText.classList.add('hidden');
         submitLoader.classList.remove('hidden');
-        submitButton.disabled = true;
-        const form = document.querySelector('form');
-        form.submit();
     });
 </script>
